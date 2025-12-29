@@ -66,8 +66,7 @@ local LadderCinematic =
 	tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("LadderCinematic"))
 	or tryRequire(RS:FindFirstChild("LadderCinematic"))
 
--- ★ Stage2 사다리 템플릿 / 위치 (QuizClient와 동일 값)
-local LADDER_TEMPLATE: Instance? = RS:FindFirstChild("Stage2Ladder")
+local LADDER_TEMPLATE: Instance? = ReplicatedFirst:FindFirstChild("Stage2Ladder")
 local LADDER_POS = Vector3.new(-59.745, 29.593, 125.927)
 
 -- 포탈 템플릿 (Potal)

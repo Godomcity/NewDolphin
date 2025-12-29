@@ -185,8 +185,8 @@ local LOCAL_PROMPT_NAME   = "_ClientOnlyPrompt"
 local STAGE2_LADDER_NAME      = "Stage2Ladder"
 local STAGE2_LADDER_FIXED_POS = Vector3.new(-59.745, 29.593, 125.927)
 
--- 🔹 사다리 템플릿 (ReplicatedStorage 안에 있어야 함)
-local LADDER_TEMPLATE = RS:WaitForChild("Stage2Ladder")
+-- 🔹 사다리 템플릿 (ReplicatedFirst 안에 있어야 함)
+local LADDER_TEMPLATE = ReplicatedFirst:WaitForChild("Stage2Ladder")
 local LADDER_POS      = STAGE2_LADDER_FIXED_POS
 
 -- 🔹 카메라 연출용 포인트들 (테스트 스크립트 값 그대로)
