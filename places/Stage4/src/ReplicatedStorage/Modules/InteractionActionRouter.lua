@@ -1,7 +1,7 @@
 -- ReplicatedStorage/Modules/InteractionActionRouter.lua
 --!strict
 
-local RS = game:GetService("ReplicatedStorage")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local CollectionService = game:GetService("CollectionService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace") -- ★ HitEffect용
@@ -9,7 +9,7 @@ local Workspace = game:GetService("Workspace") -- ★ HitEffect용
 local M = {}
 
 -- ★ HitEffect 템플릿
-local HitEffectTemplate: Instance? = RS:FindFirstChild("HitEffect")
+local HitEffectTemplate: Instance? = ReplicatedFirst:FindFirstChild("HitEffect")
 
 -- tag → action(root, ctx)
 local _actions: {[string]: (Instance, {[string]: any}) -> ()} = {}
@@ -360,7 +360,7 @@ local function pickMatchingAnchorInClone(clone: Instance, nameHint: string?): Ba
 	return nil
 end
 
-local function actionReplaceWithRS(root: Instance, ctx)
+local function actionReplaceWithReplicatedFirst(root: Instance, ctx)
 	-- HitEffect는 이미 실행됨
 
 	-- 1) 교체 대상(Model 또는 Part)
@@ -389,11 +389,11 @@ local function actionReplaceWithRS(root: Instance, ctx)
 	end
 
 	-- 3) 템플릿 찾기
-	local template = RS:FindFirstChild(target.Name)
-	if not template then
-		warn("[ActionRouter] 템플릿 없음:", target.Name)
-		return
-	end
+        local template = ReplicatedFirst:FindFirstChild(target.Name)
+        if not template then
+                warn("[ActionRouter] 템플릿 없음:", target.Name)
+                return
+        end
 
 	-- 4) 복제
 	local clone = template:Clone()
@@ -442,8 +442,8 @@ M.registerMany({
 	PortalNeonOn    = actionPortalNeonOn,
 })
 
-M.register("Box", actionReplaceWithRS)
-M.register("seaShell", actionReplaceWithRS)
+M.register("Box", actionReplaceWithReplicatedFirst)
+M.register("seaShell", actionReplaceWithReplicatedFirst)
 
 function M.debugDescribeAncestor(inst: Instance): string
 	local info = M.inspectAncestor(inst)
