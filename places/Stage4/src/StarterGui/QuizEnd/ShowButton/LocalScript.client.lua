@@ -12,7 +12,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
-local TEACHER_USERID = 2783482612
+local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
 local lp = Players.LocalPlayer
 
 local CLICK_SOUND_ID = "rbxassetid://15675059323"
@@ -24,7 +24,17 @@ local spawnBtn = bg:WaitForChild("SpawnButton") :: GuiButton
 local stopBtn = bg:WaitForChild("StopButton") :: GuiButton
 
 local function isTeacher(): boolean
-	return lp.UserId == TEACHER_USERID
+        local role = lp:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = lp:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
 end
 
 local function isPanelOpen(): boolean

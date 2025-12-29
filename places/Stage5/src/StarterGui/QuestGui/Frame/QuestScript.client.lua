@@ -14,7 +14,21 @@ local TweenService = game:GetService("TweenService") -- ★ 슬라이드용
 
 local LP = Players.LocalPlayer
 
-local TEACHER_USERID = 2783482612
+local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
+
+local function isTeacher(): boolean
+        local role = LP:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = LP:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
+end
 
 -- ===== 퀘스트 변경 사운드 =====
 local QUEST_CHANGE_SFX_ID = "rbxassetid://7740696902"
@@ -72,21 +86,20 @@ local currentTweenQuest: Tween? = nil
 local SLIDE_TIME   = 0.45        -- 애니메이션 시간
 local SLIDE_OFFSET = -1.0        -- 왼쪽 화면 밖에서 시작(-1.0 만큼 왼쪽)
 
--- ✅ 선생님은 QuestGui 안 보이게(아예 로직 실행 X)
 do
-	if LP.UserId == TEACHER_USERID then
-		-- Quest 프레임 숨김
-		questRoot.Visible = false
+        if isTeacher() then
+                -- Quest 프레임 숨김
+                questRoot.Visible = false
 
-		-- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
-		local gui = root:FindFirstAncestorOfClass("ScreenGui")
-		if gui then
-			gui.Enabled = false
-		end
+                -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
+                local gui = root:FindFirstAncestorOfClass("ScreenGui")
+                if gui then
+                        gui.Enabled = false
+                end
 
-		print("[QuestClient] Teacher detected -> QuestGui hidden")
-		return
-	end
+                print("[QuestClient] Teacher detected -> QuestGui hidden")
+                return
+        end
 end
 
 -- ===== 상태 저장 =====
