@@ -8,21 +8,7 @@ local TweenService = game:GetService("TweenService")
 
 local LP = Players.LocalPlayer
 
-local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
-
-local function isTeacher(): boolean
-        local role = LP:GetAttribute("userRole")
-        if Roles.isTeacherRole(role) then
-                return true
-        end
-
-        local isTeacherAttr = LP:GetAttribute("isTeacher")
-        if typeof(isTeacherAttr) == "boolean" then
-                return isTeacherAttr
-        end
-
-        return false
-end
+local StageRolePolicy = require(RS:WaitForChild("Modules"):WaitForChild("StageRolePolicy"))
 
 -- ===== UI 찾기 =====
 local root       = script.Parent :: Frame
@@ -34,20 +20,44 @@ local textLabel  = listFrame:WaitForChild("TextLabel") :: TextLabel
 questLabel.RichText = true
 
 -- ✅ 선생님은 QuestGui 안 보이게(아예 로직 실행 X)
-do
-        if isTeacher() then
-                -- Quest 프레임 숨김
-                questRoot.Visible = false
+local teacherDisconnect: (() -> ())? = nil
 
-                -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
-                local gui = root:FindFirstAncestorOfClass("ScreenGui")
-                if gui then
-                        gui.Enabled = false
-                end
+local function hideQuestForTeacher(reason: string?)
+        questRoot.Visible = false
 
-                print("[QuestClient] Teacher detected -> QuestGui hidden")
-                return
+        -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
+        local gui = root:FindFirstAncestorOfClass("ScreenGui")
+        if gui then
+                gui.Enabled = false
         end
+
+        if teacherDisconnect then
+                teacherDisconnect()
+                teacherDisconnect = nil
+        end
+
+        print("[QuestClient] Teacher detected -> QuestGui hidden", reason)
+end
+
+local function ensureQuestHiddenForTeacher(): boolean
+        if StageRolePolicy.WaitForRoleReplication(LP, 12) then
+                if StageRolePolicy.IsTeacher(LP) then
+                        hideQuestForTeacher("(initial)")
+                        return true
+                end
+        end
+
+        teacherDisconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
+                if isTeacher then
+                        hideQuestForTeacher(reason)
+                end
+        end, { timeoutSec = 15 })
+
+        return false
+end
+
+if ensureQuestHiddenForTeacher() then
+        return
 end
 
 -- ===== 퀘스트 텍스트 정의 =====

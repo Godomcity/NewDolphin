@@ -26,20 +26,32 @@ end
 
 -- ===== 역할 모듈 =====
 local StageRolePolicy =
-	tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("StageRolePolicy"))
-	or tryRequire(RS:FindFirstChild("StageRolePolicy"))
+        tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("StageRolePolicy"))
+        or tryRequire(RS:FindFirstChild("StageRolePolicy"))
 
-local IS_TEACHER = false
-if StageRolePolicy and typeof(StageRolePolicy.ShouldSkipStageClientFlow) == "function" then
-	IS_TEACHER = StageRolePolicy.ShouldSkipStageClientFlow(LP)
+local teacherFlowStarted = false
+
+local function detectTeacher(): boolean
+        if StageRolePolicy and typeof(StageRolePolicy.IsTeacher) == "function" then
+                local ok, res = pcall(function()
+                        return StageRolePolicy.IsTeacher(LP)
+                end)
+                if ok and res then
+                        return true
+                end
+        end
+
+        if StageRolePolicy and typeof(StageRolePolicy.ShouldSkipStageClientFlow) == "function" then
+                local ok, res = pcall(function()
+                        return StageRolePolicy.ShouldSkipStageClientFlow(LP)
+                end)
+                if ok and res then
+                        return true
+                end
+        end
+
+        return false
 end
-
--- 선생님이 아니면 이 스크립트는 아무 것도 안 함
-if not IS_TEACHER then
-	return
-end
-
-print("[StageTeacherSkip_Stage1] Teacher detected → show cleared state, skip Stage flows")
 
 -- ===== Stage에서 이미 쓰던 모듈들 재사용 =====
 local LocalObjectHider =
@@ -315,13 +327,77 @@ end
 ----------------------------------------------------------------
 -- 메인 실행
 ----------------------------------------------------------------
-task.defer(function()
-	disableStagePromptsForTeacher()
-	cleanAllStageTrashForTeacher()
-	moveQuestNPCToSpawn()
+local function startTeacherFlow(reason: string?)
+        if teacherFlowStarted then return end
+        teacherFlowStarted = true
 
-	local ladder = spawnLadderForTeacher()
-	local portal = spawnPortalForTeacher()
+        print("[StageTeacherSkip_Stage2] Teacher detected → show cleared state, skip Stage flows", reason)
 
-	guideToPortal(portal or ladder)
-end)
+        task.defer(function()
+                disableStagePromptsForTeacher()
+                cleanAllStageTrashForTeacher()
+                moveQuestNPCToSpawn()
+
+                local ladder = spawnLadderForTeacher()
+                local portal = spawnPortalForTeacher()
+
+                guideToPortal(portal or ladder)
+        end)
+end
+
+local function monitorTeacherFlag()
+        local function fallback()
+                local deadline = os.clock() + 12
+                while os.clock() < deadline do
+                        if detectTeacher() then
+                                startTeacherFlow("(fallback)")
+                                return
+                        end
+                        task.wait(0.5)
+                end
+
+                warn("[StageTeacherSkip_Stage2] Teacher flag not detected after delay. Running student flow.")
+        end
+
+        if StageRolePolicy and StageRolePolicy.ObserveTeacher and StageRolePolicy.WaitForRoleReplication then
+                task.spawn(function()
+                        StageRolePolicy.WaitForRoleReplication(LP, 12)
+
+                        if detectTeacher() then
+                                startTeacherFlow("(post-spawn)")
+                                return
+                        end
+
+                        local disconnect: (() -> ())? = nil
+
+                        local function onTeacherChanged(isTeacher: boolean, reason: string?)
+                                if not isTeacher or teacherFlowStarted then
+                                        return
+                                end
+
+                                if disconnect then
+                                        disconnect()
+                                end
+                                startTeacherFlow(reason)
+                        end
+
+                        disconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
+                                onTeacherChanged(isTeacher, reason)
+                        end, { timeoutSec = 12 })
+
+                        task.delay(15, function()
+                                if teacherFlowStarted then return end
+                                warn("[StageTeacherSkip_Stage2] Teacher flag not detected after delay. Running student flow.")
+                                if disconnect then
+                                        disconnect()
+                                end
+                        end)
+                end)
+
+                return
+        end
+
+        task.spawn(fallback)
+end
+
+monitorTeacherFlag()

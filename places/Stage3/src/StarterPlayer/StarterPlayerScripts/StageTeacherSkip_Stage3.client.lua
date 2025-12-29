@@ -10,7 +10,7 @@
 --  - ★ (추가) JellyfishCutscene.PlayJellyOnly 로 젤리 물방울 연출만 재생
 --  → 재입장 시 진행도 복원된 느낌처럼, 선생님은 처음부터 "다 끝난 상태"만 보게 됨
 
-wait(5)
+wait(2)
 
 local Players            = game:GetService("Players")
 local RS                 = game:GetService("ReplicatedStorage")
@@ -21,27 +21,39 @@ local LP = Players.LocalPlayer
 
 -- ===== 공통 tryRequire =====
 local function tryRequire(inst: Instance?): any
-	if not inst or not inst:IsA("ModuleScript") then return nil end
-	local ok, m = pcall(require, inst)
-	return ok and m or nil
+        if not inst or not inst:IsA("ModuleScript") then return nil end
+        local ok, m = pcall(require, inst)
+        return ok and m or nil
 end
 
 -- ===== 역할 모듈 =====
 local StageRolePolicy =
-	tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("StageRolePolicy"))
-	or tryRequire(RS:FindFirstChild("StageRolePolicy"))
+        tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("StageRolePolicy"))
+        or tryRequire(RS:FindFirstChild("StageRolePolicy"))
 
-local IS_TEACHER = false
-if StageRolePolicy and typeof(StageRolePolicy.ShouldSkipStageClientFlow) == "function" then
-	IS_TEACHER = StageRolePolicy.ShouldSkipStageClientFlow(LP)
+local teacherFlowStarted = false
+
+local function detectTeacher(): boolean
+        if StageRolePolicy and typeof(StageRolePolicy.IsTeacher) == "function" then
+                local ok, res = pcall(function()
+                        return StageRolePolicy.IsTeacher(LP)
+                end)
+                if ok and res then
+                        return true
+                end
+        end
+
+        if StageRolePolicy and typeof(StageRolePolicy.ShouldSkipStageClientFlow) == "function" then
+                local ok, res = pcall(function()
+                        return StageRolePolicy.ShouldSkipStageClientFlow(LP)
+                end)
+                if ok and res then
+                        return true
+                end
+        end
+
+        return false
 end
-
--- 선생님이 아니면 이 스크립트는 아무 것도 안 함
-if not IS_TEACHER then
-	return
-end
-
-print("[StageTeacherSkip_Stage1] Teacher detected → show cleared state, skip stage flows")
 
 -- ===== Stage 에서 이미 쓰던 모듈들 재사용 =====
 local LocalObjectHider =
@@ -332,23 +344,77 @@ end
 ----------------------------------------------------------------
 -- 메인 실행
 ----------------------------------------------------------------
-task.defer(function()
-	-- 1) 먼저 프롬프트 막기 (선생님은 트리거 자체가 안 되도록 → 컷씬/문제 스킵)
-	disableStagePromptsForTeacher()
+local function startTeacherFlow(reason: string?)
+        if teacherFlowStarted then return end
+        teacherFlowStarted = true
 
-	-- 2) 쓰레기/정리 대상 오브젝트 싹 정리
-	cleanAllStageTrashForTeacher()
+        print("[StageTeacherSkip_Stage1] Teacher detected → show cleared state, skip stage flows", reason)
 
-	-- 3) 문은 이미 열린 상태 + NPC는 최종 위치로
-	applyDoorOpenedVisual()
-	moveQuestNPCToSpawn()
+        task.defer(function()
+                disableStagePromptsForTeacher()
+                cleanAllStageTrashForTeacher()
+                applyDoorOpenedVisual()
+                moveQuestNPCToSpawn()
+                playJellyForTeacher()
 
-	-- 4) 선생님 입장 시 젤리 물방울 연출만 한 번 재생 (카메라 고정 버전)
-	playJellyForTeacher()
+                local portal = spawnPortalForTeacher()
+                guideToPortal(portal)
+        end)
+end
 
-	-- 5) 포탈 템플릿을 바로 스폰 (컷씬 없이)
-	local portal = spawnPortalForTeacher()
+local function monitorTeacherFlag()
+        local function fallback()
+                local deadline = os.clock() + 12
+                while os.clock() < deadline do
+                        if detectTeacher() then
+                                startTeacherFlow("(fallback)")
+                                return
+                        end
+                        task.wait(0.5)
+                end
 
-	-- 6) 가이드가 있다면 포탈 쪽으로 향하게
-	guideToPortal(portal)
-end)
+                warn("[StageTeacherSkip_Stage1] Teacher flag not detected after delay. Running student flow.")
+        end
+
+        if StageRolePolicy and StageRolePolicy.ObserveTeacher and StageRolePolicy.WaitForRoleReplication then
+                task.spawn(function()
+                        StageRolePolicy.WaitForRoleReplication(LP, 12)
+
+                        if detectTeacher() then
+                                startTeacherFlow("(post-spawn)")
+                                return
+                        end
+
+                        local disconnect: (() -> ())? = nil
+
+                        local function onTeacherChanged(isTeacher: boolean, reason: string?)
+                                if not isTeacher or teacherFlowStarted then
+                                        return
+                                end
+
+                                if disconnect then
+                                        disconnect()
+                                end
+                                startTeacherFlow(reason)
+                        end
+
+                        disconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
+                                onTeacherChanged(isTeacher, reason)
+                        end, { timeoutSec = 12 })
+
+                        task.delay(15, function()
+                                if teacherFlowStarted then return end
+                                warn("[StageTeacherSkip_Stage1] Teacher flag not detected after delay. Running student flow.")
+                                if disconnect then
+                                        disconnect()
+                                end
+                        end)
+                end)
+
+                return
+        end
+
+        task.spawn(fallback)
+end
+
+monitorTeacherFlag()

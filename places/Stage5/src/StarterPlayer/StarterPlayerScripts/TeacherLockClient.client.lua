@@ -7,29 +7,33 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local lp = Players.LocalPlayer
 
-local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
+local StageRolePolicy = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("StageRolePolicy"))
 local PlayerLock2 = require(ReplicatedStorage.Modules.PlayerLock)
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local RE_Lock = Remotes:WaitForChild("Teacher_ClientLock")
 
+local currentIsTeacher = false
+
+if StageRolePolicy.WaitForRoleReplication(lp, 12) then
+currentIsTeacher = StageRolePolicy.IsTeacher(lp)
+end
+
+StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
+currentIsTeacher = isTeacher
+end, { timeoutSec = 15 })
+
 RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
         -- 선생님은 항상 제외
-        local role = lp:GetAttribute("userRole")
-        if Roles.isTeacherRole(role) then return end
+        if currentIsTeacher then return end
 
-        local isTeacherAttr = lp:GetAttribute("isTeacher")
-        if typeof(isTeacherAttr) == "boolean" and isTeacherAttr then
-                return
+        if shouldLock then
+                PlayerLock2.Lock({
+                        freezeMovement = true,
+                        freezeCamera = false,
+                        disableInput = false,
+                })
+        else
+                PlayerLock2.Unlock()
         end
-
-	if shouldLock then
-		PlayerLock2.Lock({
-			freezeMovement = true,
-			freezeCamera = false,
-			disableInput = false,
-		})
-	else
-		PlayerLock2.Unlock()
-	end
 end)

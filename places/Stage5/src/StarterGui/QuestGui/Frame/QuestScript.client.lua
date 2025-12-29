@@ -14,21 +14,7 @@ local TweenService = game:GetService("TweenService") -- ★ 슬라이드용
 
 local LP = Players.LocalPlayer
 
-local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
-
-local function isTeacher(): boolean
-        local role = LP:GetAttribute("userRole")
-        if Roles.isTeacherRole(role) then
-                return true
-        end
-
-        local isTeacherAttr = LP:GetAttribute("isTeacher")
-        if typeof(isTeacherAttr) == "boolean" then
-                return isTeacherAttr
-        end
-
-        return false
-end
+local StageRolePolicy = require(RS:WaitForChild("Modules"):WaitForChild("StageRolePolicy"))
 
 -- ===== 퀘스트 변경 사운드 =====
 local QUEST_CHANGE_SFX_ID = "rbxassetid://7740696902"
@@ -86,20 +72,51 @@ local currentTweenQuest: Tween? = nil
 local SLIDE_TIME   = 0.45        -- 애니메이션 시간
 local SLIDE_OFFSET = -1.0        -- 왼쪽 화면 밖에서 시작(-1.0 만큼 왼쪽)
 
+local teacherDisconnect: (() -> ())? = nil
+
+local function hideQuestForTeacher(reason: string?)
+questRoot.Visible = false
+
+-- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
+local gui = root:FindFirstAncestorOfClass("ScreenGui")
+if gui then
+gui.Enabled = false
+end
+
+if teacherDisconnect then
+teacherDisconnect()
+teacherDisconnect = nil
+end
+
+print("[QuestClient] Teacher detected -> QuestGui hidden", reason)
+end
+
+local function ensureQuestHiddenForTeacher(): boolean
+if StageRolePolicy.WaitForRoleReplication(LP, 12) then
+if StageRolePolicy.IsTeacher(LP) then
+hideQuestForTeacher("(initial)")
+return true
+end
+end
+
+teacherDisconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
+if isTeacher then
+hideQuestForTeacher(reason)
+end
+end, { timeoutSec = 15 })
+
+return false
+end
+
+if ensureQuestHiddenForTeacher() then
+return
+end
+
 do
-        if isTeacher() then
-                -- Quest 프레임 숨김
-                questRoot.Visible = false
-
-                -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
-                local gui = root:FindFirstAncestorOfClass("ScreenGui")
-                if gui then
-                        gui.Enabled = false
-                end
-
-                print("[QuestClient] Teacher detected -> QuestGui hidden")
-                return
-        end
+if StageRolePolicy.IsTeacher(LP) then
+hideQuestForTeacher("(sync)")
+return
+end
 end
 
 -- ===== 상태 저장 =====
