@@ -14,6 +14,7 @@
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local SSS = game:GetService("ServerScriptService")
+local HttpService = game:GetService("HttpService")
 
 -- ⚠️ 토큰 노출 방지: QuizApi 모듈은 반드시 ServerScriptService 아래에 두기
 -- 예: ServerScriptService/Modules/QuizApi.lua
@@ -50,6 +51,28 @@ local CACHE_TTL = 15 -- 초 (원하면 조절)
 local inFlight = false
 local waiters: { BindableEvent } = {}
 
+local function summarizeErr(err)
+        if err == nil then
+                return "(no details)"
+        end
+
+        local parts = {}
+        if err.msg then table.insert(parts, tostring(err.msg)) end
+        if err.statusCode then table.insert(parts, "status=" .. tostring(err.statusCode)) end
+        if err.statusMessage and err.statusMessage ~= "" then
+                table.insert(parts, "statusMessage=" .. tostring(err.statusMessage))
+        end
+        if err.body and err.body ~= "" then
+                local body = tostring(err.body)
+                if #body > 300 then
+                        body = body:sub(1, 300) .. "..."
+                end
+                table.insert(parts, "body=" .. body)
+        end
+
+        return #parts > 0 and table.concat(parts, " | ") or "(no details)"
+end
+
 local function finishAll(result)
 	for _, ev in ipairs(waiters) do
 		ev:Fire(result)
@@ -74,9 +97,9 @@ local function getQuestionShared()
 
 	inFlight = true
 
-	-- [QUIZ][RETRY] 3회 재시도 (일시 장애/레이트 대비)
-	local lastErr = nil
-	for i = 1, 3 do
+        -- [QUIZ][RETRY] 3회 재시도 (일시 장애/레이트 대비)
+        local lastErr = nil
+        for i = 1, 3 do
 		local dto, err = QuizApi.GetQuestionWithErr()
 		if dto then
 			cachedDto = dto
@@ -100,20 +123,20 @@ end
 -- ===== 입장 시 미리 GET(워밍업) =====
 -- 첫 상호작용 때 "question not ready" / 지연을 줄이는 용도
 Players.PlayerAdded:Connect(function(player)
-	task.spawn(function()
-		local res = getQuestionShared()
-		if not res.ok then
-			warn(("[QuizServer] warmup failed for %s: %s"):format(player.Name, tostring(res.error)))
-		end
-	end)
+        task.spawn(function()
+                local res = getQuestionShared()
+                if not res.ok then
+                        warn(("[QuizServer] warmup failed for %s: %s (%s)"):format(player.Name, tostring(res.error), summarizeErr(res.last)))
+                end
+        end)
 end)
 
 -- ===== 서버 시작 시도 워밍업(선택) =====
 task.spawn(function()
-	local res = getQuestionShared()
-	if not res.ok then
-		warn("[QuizServer] boot warmup failed:", res.error, res.last and res.last.msg)
-	end
+        local res = getQuestionShared()
+        if not res.ok then
+                warn(("[QuizServer] boot warmup failed: %s (%s)"):format(tostring(res.error), summarizeErr(res.last)))
+        end
 end)
 
 -- ===== RemoteFunction: 문제 가져오기 =====
@@ -141,16 +164,16 @@ RF_Submit.OnServerInvoke = function(player: Player, quizChoiceId: any, quizStora
 	end
 
 	-- 클라가 쓰기 쉬운 형태로 반환
-	return {
-		ok = true,
-		correct = (result.isCorrect == true),
-		feedback = result.feedback,
-		explanation = result.explanation,
-		earnedScore = result.earnedScore,
-		maxScore = result.maxScore,
-		gradingStatus = result.gradingStatus,
-		attemptCount = result.attemptCount,
-	}
+        return {
+                ok = true,
+                correct = (result.isCorrect == true),
+                feedback = result.feedback,
+                explanation = result.explanation,
+                earnedScore = result.earnedScore,
+                maxScore = result.maxScore,
+                gradingStatus = result.gradingStatus,
+                attemptCount = result.attemptCount,
+        }
 end
 
-print("[QuizServer] READY (singleflight + warmup)")
+print(("[QuizServer] READY (singleflight + warmup) HttpEnabled=%s"):format(tostring(HttpService.HttpEnabled)))
