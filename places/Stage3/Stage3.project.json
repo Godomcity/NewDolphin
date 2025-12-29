@@ -1,0 +1,10 @@
+{
+  "name": "Stage3",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": { "$path": "src/ReplicatedStorage" },
+    "ServerScriptService": { "$path": "src/ServerScriptService" },
+    "StarterPlayer": { "$path": "src/StarterPlayer" },
+    "StarterGui": { "$path": "src/StarterGui" }
+  }
+}

@@ -1,0 +1,6 @@
+places/*/_port/
+places/*/*.rbxl
+places/*/*.rbxlx
+Thumbs.db
+.vscode/
+*.log
