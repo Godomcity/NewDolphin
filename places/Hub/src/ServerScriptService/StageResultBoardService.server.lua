@@ -125,36 +125,38 @@ local function clearSessionData(sessionId: string)
 		end
 	end
 
-	-- 2) 이 세션에 속한 모든 플레이어 데이터 삭제
-	for _, plr in ipairs(Players:GetPlayers()) do
-		local psid = plr:GetAttribute("sessionId")
-		if typeof(psid) == "string" and psid == sessionId then
-			-- SessionResume 삭제 (userId 기준)
-			local okResume, errResume = pcall(function()
-				SessionResume.ClearSession(sessionId)
-			end)
-			if not okResume then
-				warn("[StageResultBoard] SessionResume.Clear failed for", plr.Name, errResume)
-			else
-				print("[StageResultBoard] SessionResume cleared for", plr.Name)
-			end
+        -- 2) 이 세션에 속한 모든 플레이어 데이터 삭제
+        --    플레이어가 Hub에 없더라도 세션 ID만으로 일괄 정리되도록 서버 단에서 한 번만 호출
+        do
+                -- SessionResume 삭제 (userId 기준)
+                local okResume, errResume = pcall(function()
+                        SessionResume.ClearSession(sessionId)
+                end)
+                if not okResume then
+                        warn("[StageResultBoard] SessionResume.ClearSession failed for", sessionId, errResume)
+                else
+                        print("[StageResultBoard] SessionResume cleared for session", sessionId)
+                end
 
-			-- SessionProgress 삭제 (sessionId + userId 기준)
-			local okProg, errProg = pcall(function()
-				if SessionProgress.ClearSession then
-					SessionProgress.ClearSession(sessionId)
-				else
-					-- 혹시 ClearForSessionUser가 없고 ClearForPlayer만 있다면 대비
-					SessionProgress.ClearForPlayer(plr)
-				end
-			end)
-			if not okProg then
-				warn("[StageResultBoard] SessionProgress.ClearForSessionUser failed for", plr.Name, errProg)
-			else
-				print("[StageResultBoard] SessionProgress cleared for", plr.Name)
-			end
-		end
-	end
+                -- SessionProgress 삭제 (sessionId + userId 기준)
+                local okProg, errProg = pcall(function()
+                        if SessionProgress.ClearSession then
+                                SessionProgress.ClearSession(sessionId)
+                        else
+                                -- 혹시 ClearForSessionUser가 없고 ClearForPlayer만 있다면 대비
+                                for _, plr in ipairs(Players:GetPlayers()) do
+                                        if plr:GetAttribute("sessionId") == sessionId then
+                                                SessionProgress.ClearForPlayer(plr)
+                                        end
+                                end
+                        end
+                end)
+                if not okProg then
+                        warn("[StageResultBoard] SessionProgress.ClearSession failed for", sessionId, errProg)
+                else
+                        print("[StageResultBoard] SessionProgress cleared for session", sessionId)
+                end
+        end
 end
 
 ----------------------------------------------------------------
