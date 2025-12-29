@@ -78,11 +78,22 @@ teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(flag: boolean, r
         applyTeacherFlag(flag, reason)
 end, { timeoutSec = 15 })
 
+<<<<<<< HEAD
+local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+if observeBroadcast then
+        teacherBroadcastDisconnect = observeBroadcast(lp, function(_, flag)
+                if typeof(flag) == "boolean" then
+                        applyTeacherFlag(flag, "(TeacherRoleUpdated)")
+                end
+        end, 15)
+end
+=======
 teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(lp, function(_, flag)
         if typeof(flag) == "boolean" then
                 applyTeacherFlag(flag, "(TeacherRoleUpdated)")
         end
 end, 15)
+>>>>>>> main
 
 -- 패널 트윈
 local panelTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
