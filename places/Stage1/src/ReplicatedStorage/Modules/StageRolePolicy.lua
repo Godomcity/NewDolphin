@@ -8,42 +8,21 @@ local M = {}
 
 local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
 
-local TeacherRoleEvent: RemoteEvent? = nil
-
-local function resolveTeacherRoleEvent(timeoutSec: number?): RemoteEvent?
-        if TeacherRoleEvent and TeacherRoleEvent.Parent then
-                return TeacherRoleEvent
-        end
-
-        local timeout = timeoutSec or 5
-        local deadline = os.clock() + timeout
-
+local function getTeacherRoleEvent(): RemoteEvent?
         local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-        while not remotes and os.clock() < deadline do
-                remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Remotes", true)
-                if not remotes then
-                        task.wait(0.1)
-                end
-        end
-
         if not remotes then
                 return nil
         end
 
         local ev = remotes:FindFirstChild("TeacherRoleUpdated")
-        if not ev then
-                ev = remotes:WaitForChild("TeacherRoleUpdated", math.max(0, deadline - os.clock()))
-        end
-
         if ev and ev:IsA("RemoteEvent") then
-                TeacherRoleEvent = ev
                 return ev
         end
 
         return nil
 end
 
-TeacherRoleEvent = resolveTeacherRoleEvent()
+local TeacherRoleEvent: RemoteEvent? = getTeacherRoleEvent()
 
 local function isTeacherByRole(plr: Player): boolean
         local role = plr:GetAttribute("userRole")
@@ -78,79 +57,6 @@ local function hasRoleAttributes(plr: Player): boolean
         return roleAttr ~= nil or typeof(isTeacherAttr) == "boolean"
 end
 
-local function applyTeacherPayload(plr: Player, role: string?, isTeacher: boolean?)
-        if role and plr:GetAttribute("userRole") == nil then
-                plr:SetAttribute("userRole", role)
-        end
-
-        if typeof(isTeacher) == "boolean" and typeof(plr:GetAttribute("isTeacher")) ~= "boolean" then
-                plr:SetAttribute("isTeacher", isTeacher)
-        end
-end
-
-local function waitForTeacherBroadcast(plr: Player, timeout: number): boolean
-        if not RunService:IsClient() then
-                return false
-        end
-
-        local event = resolveTeacherRoleEvent(timeout)
-        if not event then
-                return false
-        end
-
-        local deadline = os.clock() + timeout
-        local received = false
-        local conn: RBXScriptConnection?
-
-        conn = event.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
-                if not plr or plr.UserId ~= userId then
-                        return
-                end
-
-                received = true
-
-                applyTeacherPayload(plr, role, isTeacher)
-        end)
-
-        while os.clock() < deadline and not received do
-                if hasRoleAttributes(plr) then
-                        break
-                end
-                task.wait(0.25)
-        end
-
-        if conn then
-                conn:Disconnect()
-        end
-
-        return received
-end
-
-function M.ObserveTeacherBroadcast(plr: Player, callback: (string?, boolean?) -> (), timeoutSec: number?)
-        if not RunService:IsClient() then
-                return nil
-        end
-
-        local event = resolveTeacherRoleEvent(timeoutSec)
-        if not event then
-                return nil
-        end
-
-        local conn: RBXScriptConnection
-        conn = event.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
-                if not plr or plr.UserId ~= userId then
-                        return
-                end
-
-                applyTeacherPayload(plr, role, isTeacher)
-                callback(role, isTeacher)
-        end)
-
-        return function()
-                conn:Disconnect()
-        end
-end
-
 -- userRole/isTeacher 속성이 복원될 때까지 대기
 function M.WaitForRoleReplication(plr: Player, timeoutSec: number?): boolean
         local timeout = timeoutSec or 10
@@ -159,8 +65,6 @@ function M.WaitForRoleReplication(plr: Player, timeoutSec: number?): boolean
         if hasRoleAttributes(plr) then
                 return true
         end
-
-        waitForTeacherBroadcast(plr, timeout)
 
         while os.clock() < deadline do
                 if hasRoleAttributes(plr) then
@@ -195,17 +99,14 @@ function M.ObserveTeacher(plr: Player, callback: (boolean, string?) -> (), opts:
                 fire("(initial)")
         end)
 
-        if RunService:IsClient() then
-                local event = resolveTeacherRoleEvent(timeout)
-                if event then
-                        table.insert(connections, event.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
+        if RunService:IsClient() and TeacherRoleEvent then
+                table.insert(connections, TeacherRoleEvent.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
                         if not plr or plr.UserId ~= userId then
                                 return
                         end
 
                         fire("(server role broadcast)")
-                        end))
-                end
+                end))
         end
 
         table.insert(connections, plr:GetAttributeChangedSignal("userRole"):Connect(function()

@@ -12,6 +12,7 @@
 
 local Players                 = game:GetService("Players")
 local RS                      = game:GetService("ReplicatedStorage")
+local ReplicatedFirst         = game:GetService("ReplicatedFirst")
 local TweenService            = game:GetService("TweenService")
 local ProximityPromptService  = game:GetService("ProximityPromptService")
 local Workspace               = game:GetService("Workspace")
@@ -88,15 +89,15 @@ end
 
 -- ========= HUD / 퀘스트 / 가이드 버스 =========
 local QuizHudBus: BindableEvent do
-	local obj = RS:FindFirstChild("QuizHudBus")
-	if obj and obj:IsA("BindableEvent") then
-		QuizHudBus = obj
-	else
-		local ev = Instance.new("BindableEvent")
-		ev.Name = "QuizHudBus"
-		ev.Parent = RS
-		QuizHudBus = ev
-	end
+        local obj = ReplicatedFirst:FindFirstChild("QuizHudBus")
+        if obj and obj:IsA("BindableEvent") then
+                QuizHudBus = obj
+        else
+                local ev = Instance.new("BindableEvent")
+                ev.Name = "QuizHudBus"
+                ev.Parent = ReplicatedFirst
+                QuizHudBus = ev
+        end
 end
 
 local QuestProgressBus: BindableEvent do
