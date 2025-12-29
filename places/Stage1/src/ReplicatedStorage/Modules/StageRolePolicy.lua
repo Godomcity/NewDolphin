@@ -2,10 +2,27 @@
 --!strict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local M = {}
 
 local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
+
+local function getTeacherRoleEvent(): RemoteEvent?
+        local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+        if not remotes then
+                return nil
+        end
+
+        local ev = remotes:FindFirstChild("TeacherRoleUpdated")
+        if ev and ev:IsA("RemoteEvent") then
+                return ev
+        end
+
+        return nil
+end
+
+local TeacherRoleEvent: RemoteEvent? = getTeacherRoleEvent()
 
 local function isTeacherByRole(plr: Player): boolean
         local role = plr:GetAttribute("userRole")
@@ -81,6 +98,16 @@ function M.ObserveTeacher(plr: Player, callback: (boolean, string?) -> (), opts:
                 M.WaitForRoleReplication(plr, timeout)
                 fire("(initial)")
         end)
+
+        if RunService:IsClient() and TeacherRoleEvent then
+                table.insert(connections, TeacherRoleEvent.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
+                        if not plr or plr.UserId ~= userId then
+                                return
+                        end
+
+                        fire("(server role broadcast)")
+                end))
+        end
 
         table.insert(connections, plr:GetAttributeChangedSignal("userRole"):Connect(function()
                 fire("(userRole changed)")
