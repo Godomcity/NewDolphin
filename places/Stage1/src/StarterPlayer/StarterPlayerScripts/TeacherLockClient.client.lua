@@ -5,25 +5,39 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TEACHER_USERID = 2783482612
 local lp = Players.LocalPlayer
 
+local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
 local PlayerLock2 = require(ReplicatedStorage.Modules.PlayerLock)
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local RE_Lock = Remotes:WaitForChild("Teacher_ClientLock")
 
-RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
-	-- 선생님은 항상 제외
-	if lp.UserId == TEACHER_USERID then return end
+local function isTeacher(): boolean
+        local role = lp:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
 
-	if shouldLock then
-		PlayerLock2.Lock({
-			freezeMovement = true,
-			freezeCamera = false,
-			disableInput = false,
-		})
-	else
-		PlayerLock2.Unlock()
-	end
+        local isTeacherAttr = lp:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
+end
+
+RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
+        -- 선생님은 항상 제외
+        if isTeacher() then return end
+
+        if shouldLock then
+                PlayerLock2.Lock({
+                        freezeMovement = true,
+                        freezeCamera = false,
+                        disableInput = false,
+                })
+        else
+                PlayerLock2.Unlock()
+        end
 end)

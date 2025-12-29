@@ -3,8 +3,8 @@
 local RoleConfig = {}
 
 RoleConfig.TEACHER_IDS = {
-	[2783482612] = true,  -- ✅ 요청한 선생님 계정
-	-- [1234567890] = true, -- 필요시 추가
+        -- userRole/ROLE_TEACHER 기반으로 판별하므로 기본값은 비워둠
+        -- [1234567890] = true,
 }
 
 return RoleConfig

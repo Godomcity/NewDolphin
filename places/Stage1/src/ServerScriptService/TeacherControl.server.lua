@@ -7,29 +7,39 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TEACHER_USERID = 2783482612
+local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
 
 local function isTeacher(plr: Player): boolean
-	return plr.UserId == TEACHER_USERID
+        local role = plr:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = plr:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
 end
 
 -- Remotes 폴더 보장
 local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
 if not Remotes then
-	Remotes = Instance.new("Folder")
-	Remotes.Name = "Remotes"
-	Remotes.Parent = ReplicatedStorage
+        Remotes = Instance.new("Folder")
+        Remotes.Name = "Remotes"
+        Remotes.Parent = ReplicatedStorage
 end
 
 local function ensureRE(name: string): RemoteEvent
-	local re = Remotes:FindFirstChild(name)
-	if re and re:IsA("RemoteEvent") then
-		return re
-	end
-	local n = Instance.new("RemoteEvent")
-	n.Name = name
-	n.Parent = Remotes
-	return n
+        local re = Remotes:FindFirstChild(name)
+        if re and re:IsA("RemoteEvent") then
+                return re
+        end
+        local n = Instance.new("RemoteEvent")
+        n.Name = name
+        n.Parent = Remotes
+        return n
 end
 
 local RE_Stop = ensureRE("Teacher_StopAll")
@@ -41,55 +51,55 @@ local frozen = false
 
 -- Stop 버튼
 RE_Stop.OnServerEvent:Connect(function(sender: Player)
-	if not isTeacher(sender) then return end
+        if not isTeacher(sender) then return end
 
-	frozen = not frozen
+        frozen = not frozen
 
-	local count = 0
-	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= sender then
-			count += 1
-			RE_ClientLock:FireClient(plr, frozen)
-		end
-	end
+        local count = 0
+        for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= sender then
+                        count += 1
+                        RE_ClientLock:FireClient(plr, frozen)
+                end
+        end
 
-	-- 선생님 UI 토글 상태 반영(기존)
-	RE_Stop:FireClient(sender, frozen)
-	-- 선생님에게 피드백
-	RE_Feedback:FireClient(sender, ("Stop %s (students=%d)"):format(frozen and "ON" or "OFF", count))
+        -- 선생님 UI 토글 상태 반영(기존)
+        RE_Stop:FireClient(sender, frozen)
+        -- 선생님에게 피드백
+        RE_Feedback:FireClient(sender, ("Stop %s (students=%d)"):format(frozen and "ON" or "OFF", count))
 end)
 
 -- Spawn 버튼
 RE_Spawn.OnServerEvent:Connect(function(sender: Player)
-	if not isTeacher(sender) then return end
+        if not isTeacher(sender) then return end
 
-	local tChar = sender.Character
-	local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
-	if not tRoot then
-		RE_Feedback:FireClient(sender, "Spawn failed: teacher HumanoidRootPart missing")
-		return
-	end
+        local tChar = sender.Character
+        local tRoot = tChar and tChar:FindFirstChild("HumanoidRootPart")
+        if not tRoot then
+                RE_Feedback:FireClient(sender, "Spawn failed: teacher HumanoidRootPart missing")
+                return
+        end
 
-	local baseCF = tRoot.CFrame * CFrame.new(0, 0, -6) -- 선생님 앞 6
+        local baseCF = tRoot.CFrame * CFrame.new(0, 0, -6) -- 선생님 앞 6
 
-	local count = 0
-	local offset = 0
-	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= sender then
-			local c = plr.Character
-			local r = c and c:FindFirstChild("HumanoidRootPart")
-			if r then
-				count += 1
-				offset += 1
-				-- 겹치지 않게 약간씩 배열
-				r.CFrame =
-					baseCF
-					* CFrame.new((offset % 5) * 2 - 4, 0, math.floor(offset / 5) * 2)
-			end
-		end
-	end
+        local count = 0
+        local offset = 0
+        for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= sender then
+                        local c = plr.Character
+                        local r = c and c:FindFirstChild("HumanoidRootPart")
+                        if r then
+                                count += 1
+                                offset += 1
+                                -- 겹치지 않게 약간씩 배열
+                                r.CFrame =
+                                        baseCF
+                                        * CFrame.new((offset % 5) * 2 - 4, 0, math.floor(offset / 5) * 2)
+                        end
+                end
+        end
 
-	RE_Feedback:FireClient(sender, ("Spawned students=%d"):format(count))
+        RE_Feedback:FireClient(sender, ("Spawned students=%d"):format(count))
 end)
 
 print("[TeacherControl] Server Ready")

@@ -10,6 +10,7 @@ local ServerScriptService  = game:GetService("ServerScriptService")
 local MessagingService     = game:GetService("MessagingService")
 local RunService           = game:GetService("RunService")
 
+local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
 local SessionRouter = require(ServerScriptService.Modules:WaitForChild("SessionRouter"))
 
 -- ===== 설정 =====
@@ -20,12 +21,10 @@ local BROADCAST_TOPIC     = "FinalTeleportAll"
 -- “클라에서 직접 FinalTeleport_Request 쏠 때” 쓸 기본 딜레이
 local TELEPORT_DELAY_SEC  = 25.0
 
-local TEACHER_USER_ID     = 2783482612
-
 -- ✅ 허용 reason 목록 (final_zone_end + quiz_end)
 local ALLOW_REASONS = {
-	final_zone = true,
-	quiz_end = false,
+        final_zone = true,
+        quiz_end = false,
 }
 
 -- ✅ 같은 sessionId 메시지 중복 처리 방지(서버당 1회)
@@ -60,10 +59,21 @@ local function canBroadcast(plr: Player): boolean
 end
 
 local function isTeacher(plr: Player): boolean
-	if RunService:IsStudio() then
-		return true
-	end
-	return plr.UserId == TEACHER_USER_ID
+        if RunService:IsStudio() then
+                return true
+        end
+
+        local role = plr:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = plr:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
 end
 
 -- ===== sessionId 추출 =====
