@@ -11,14 +11,13 @@ local MemoryStoreService = game:GetService("MemoryStoreService")
 local ServerScriptService= game:GetService("ServerScriptService")
 local TeleportService    = game:GetService("TeleportService")
 
+local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
 local sessionResume = require(script.Parent:WaitForChild("Modules"):WaitForChild("SessionResume"))
 local hubStartState = require(script.Parent:WaitForChild("Modules"):WaitForChild("HubStartState"))
 
 ----------------------------------------------------------------
 -- 설정
 ----------------------------------------------------------------
-local TEACHER_USER_ID = 2783482612
-
 -- ✅ 허브에서 퀴즈 시작 때 저장했던 stage 값
 local QUIZ_START_STAGE_INDEX = 1
 
@@ -86,8 +85,18 @@ end
 -- 유틸
 ----------------------------------------------------------------
 local function isTeacher(plr: Player): boolean
-	if RunService:IsStudio() then return true end
-	return plr.UserId == TEACHER_USER_ID
+        if RunService:IsStudio() then return true end
+        local role = plr:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = plr:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
 end
 
 local function getSessionIdFromPlayer(plr: Player): string?
@@ -248,10 +257,10 @@ RE_FinalJumpEnter.OnServerEvent:Connect(function(plr: Player, payload: any)
 	payload = typeof(payload) == "table" and payload or {}
 
 	-- 선생님은 완주 카운트 제외
-	if plr.UserId ~= TEACHER_USER_ID then
-		if not entered[plr] then
-			entered[plr] = true
-			enterCount += 1
+        if not isTeacher(plr) then
+                if not entered[plr] then
+                        entered[plr] = true
+                        enterCount += 1
 		end
 	end
 
@@ -266,8 +275,8 @@ RE_FinalJumpEnter.OnServerEvent:Connect(function(plr: Player, payload: any)
 	-- ✅ 들어온 순간 expectedCount 로드(없으면 전원판정 불가)
 	loadExpectedCount(sid)
 
-	printCount()
-	tryAllFinishedStart(sid)
+        printCount()
+        tryAllFinishedStart(sid)
 end)
 
 Players.PlayerRemoving:Connect(function(plr: Player)

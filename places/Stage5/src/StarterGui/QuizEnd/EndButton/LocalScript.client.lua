@@ -7,20 +7,34 @@
 local RS      = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
+local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
+
 local player     = Players.LocalPlayer
 local endButton  = script.Parent
 local quizEndGui = endButton:FindFirstAncestorOfClass("ScreenGui")
-
-local TEACHER_USER_ID = 2783482612
 
 local Remotes     = RS:WaitForChild("Remotes")
 local RE_QuizEnd  = Remotes:WaitForChild("Quiz_EndRequest") :: RemoteEvent
 
 -- 선생님만 버튼 보이기
-if player.UserId ~= TEACHER_USER_ID then
-	if endButton:IsA("GuiObject") then
-		endButton.Visible = false
-	end
+local function isTeacher(): boolean
+        local role = player:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = player:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
+end
+
+if not isTeacher() then
+        if endButton:IsA("GuiObject") then
+                endButton.Visible = false
+        end
 	return
 end
 
