@@ -18,9 +18,10 @@ local RE_QuizEnd  = Remotes:WaitForChild("Quiz_EndRequest") :: RemoteEvent
 
 local currentIsTeacher = false
 local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 if endButton:IsA("GuiObject") then
-endButton.Visible = false
+        endButton.Visible = false
 end
 
 local function updateTeacher(isTeacher: boolean, reason: string?)
@@ -33,6 +34,11 @@ local function updateTeacher(isTeacher: boolean, reason: string?)
         if isTeacher and teacherDisconnect then
                 teacherDisconnect()
                 teacherDisconnect = nil
+        end
+
+        if isTeacher and teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
         end
 
         if isTeacher then
@@ -48,6 +54,12 @@ teacherDisconnect = StageRolePolicy.ObserveTeacher(player, function(isTeacher: b
         updateTeacher(isTeacher, reason)
 end, { timeoutSec = 15 })
 
+teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(player, function(_, isTeacher)
+        if typeof(isTeacher) == "boolean" then
+                updateTeacher(isTeacher, "(TeacherRoleUpdated)")
+        end
+end, 15)
+
 local isClicked = false
 
 local function onEndClicked()
@@ -55,23 +67,23 @@ local function onEndClicked()
         if isClicked then return end
         isClicked = true
 
-	-- 버튼 GUI 닫기(선생님 화면)
-	if quizEndGui then
-		quizEndGui.Enabled = false
-	end
+        -- 버튼 GUI 닫기(선생님 화면)
+        if quizEndGui then
+                quizEndGui.Enabled = false
+        end
 
-	-- ✅ 서버가:
-	-- 1) 모든 참가자 QuizGui/대사UI 정리
-	-- 2) 4문제/10문제 컷씬 취소
-	-- 3) 엔딩 컷씬 재생
-	-- 4) 컷씬 끝나면 Hub 텔레포트(세션 전체)
-	RE_QuizEnd:FireServer({
-		sessionId = player:GetAttribute("sessionId"),
-	})
+        -- ✅ 서버가:
+        -- 1) 모든 참가자 QuizGui/대사UI 정리
+        -- 2) 4문제/10문제 컷씬 취소
+        -- 3) 엔딩 컷씬 재생
+        -- 4) 컷씬 끝나면 Hub 텔레포트(세션 전체)
+        RE_QuizEnd:FireServer({
+                sessionId = player:GetAttribute("sessionId"),
+        })
 end
 
 if endButton:IsA("GuiButton") then
-	endButton.Activated:Connect(onEndClicked)
+        endButton.Activated:Connect(onEndClicked)
 else
-	endButton.MouseButton1Click:Connect(onEndClicked)
+        endButton.MouseButton1Click:Connect(onEndClicked)
 end

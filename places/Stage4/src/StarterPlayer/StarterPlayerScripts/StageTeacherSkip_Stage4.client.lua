@@ -29,10 +29,11 @@ end
 
 -- ===== 역할 모듈 =====
 local StageRolePolicy =
-tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("StageRolePolicy"))
-or tryRequire(RS:FindFirstChild("StageRolePolicy"))
+        tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("StageRolePolicy"))
+        or tryRequire(RS:FindFirstChild("StageRolePolicy"))
 
 local teacherFlowStarted = false
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 local function detectTeacher(): boolean
 if StageRolePolicy and typeof(StageRolePolicy.IsTeacher) == "function" then
@@ -342,17 +343,23 @@ if StageRolePolicy and StageRolePolicy.ObserveTeacher and StageRolePolicy.WaitFo
 task.spawn(function()
 StageRolePolicy.WaitForRoleReplication(LP, 12)
 
-if detectTeacher() then
-startTeacherFlow("(post-spawn)")
-return
-end
+                        if detectTeacher() then
+                                startTeacherFlow("(post-spawn)")
+                                return
+                        end
 
-local disconnect: (() -> ())? = nil
+                        local disconnect: (() -> ())? = nil
 
-local function onTeacherChanged(isTeacher: boolean, reason: string?)
-if not isTeacher or teacherFlowStarted then
-return
-end
+                        teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(LP, function(_, isTeacher)
+                                if isTeacher then
+                                        startTeacherFlow("(TeacherRoleUpdated)")
+                                end
+                        end, 12)
+
+                        local function onTeacherChanged(isTeacher: boolean, reason: string?)
+                                if not isTeacher or teacherFlowStarted then
+                                        return
+                                end
 
 if disconnect then
 disconnect()

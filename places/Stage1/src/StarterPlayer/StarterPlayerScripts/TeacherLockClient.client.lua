@@ -23,6 +23,12 @@ StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
         currentIsTeacher = isTeacher
 end, { timeoutSec = 15 })
 
+StageRolePolicy.ObserveTeacherBroadcast(lp, function(_, isTeacher)
+        if typeof(isTeacher) == "boolean" then
+                currentIsTeacher = isTeacher
+        end
+end, 15)
+
 RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
         -- 선생님은 항상 제외
         if currentIsTeacher then return end

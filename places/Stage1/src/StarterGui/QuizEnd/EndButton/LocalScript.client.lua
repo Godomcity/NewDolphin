@@ -18,6 +18,7 @@ local RE_QuizEnd  = Remotes:WaitForChild("Quiz_EndRequest") :: RemoteEvent
 
 local currentIsTeacher = false
 local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 if endButton:IsA("GuiObject") then
         endButton.Visible = false
@@ -35,6 +36,11 @@ local function updateTeacher(isTeacher: boolean, reason: string?)
                 teacherDisconnect = nil
         end
 
+        if isTeacher and teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
         if isTeacher then
                 print("[QuizEnd] Teacher detected -> EndButton visible", reason)
         end
@@ -47,6 +53,12 @@ end
 teacherDisconnect = StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: string?)
         updateTeacher(isTeacher, reason)
 end, { timeoutSec = 15 })
+
+teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(player, function(_, isTeacher)
+        if typeof(isTeacher) == "boolean" then
+                updateTeacher(isTeacher, "(TeacherRoleUpdated)")
+        end
+end, 15)
 
 local isClicked = false
 
