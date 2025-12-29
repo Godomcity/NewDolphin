@@ -12,7 +12,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
-local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
+local StageRolePolicy = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("StageRolePolicy"))
 local lp = Players.LocalPlayer
 
 local CLICK_SOUND_ID = "rbxassetid://15675059323"
@@ -23,34 +23,54 @@ local xBtn = bg:WaitForChild("XButton") :: GuiButton
 local spawnBtn = bg:WaitForChild("SpawnButton") :: GuiButton
 local stopBtn = bg:WaitForChild("StopButton") :: GuiButton
 
-local function isTeacher(): boolean
-        local role = lp:GetAttribute("userRole")
-        if Roles.isTeacherRole(role) then
-                return true
-        end
-
-        local isTeacherAttr = lp:GetAttribute("isTeacher")
-        if typeof(isTeacherAttr) == "boolean" then
-                return isTeacherAttr
-        end
-
-        return false
-end
-
-local function isPanelOpen(): boolean
-        return bg.Visible == true
-end
-
--- 선생님만 UI 보이게
-showBtn.Visible = isTeacher()
-bg.Visible = false
+local isTeacher = false
+local teacherDisconnect: (() -> ())? = nil
 
 -- ✅ 패널 Position: 열기 X=2.987, 닫기 X=0 (Y=2.343 고정)
 local Y_SCALE = 2.3
 local POS_SHOW = UDim2.new(2.987, 0, Y_SCALE, 0)
 local POS_HIDE = UDim2.new(0, 0, Y_SCALE, 0)
 
+showBtn.Visible = false
+
+local function isPanelOpen(): boolean
+        return bg.Visible == true
+end
+
+local function closePanel()
+        if not bg.Visible then return end
+
+        bg.Visible = false
+        bg.Position = POS_HIDE
+        showBtn.Active = true
+end
+
+local function applyTeacherFlag(flag: boolean, reason: string?)
+        isTeacher = flag
+        showBtn.Visible = flag
+
+        if not flag then
+                closePanel()
+        elseif flag and teacherDisconnect then
+                teacherDisconnect()
+                teacherDisconnect = nil
+        end
+
+        if flag then
+                print("[QuizEnd] Teacher detected -> teacher panel enabled", reason)
+        end
+end
+
+bg.Visible = false
 bg.Position = POS_HIDE
+
+if StageRolePolicy.WaitForRoleReplication(lp, 12) then
+        applyTeacherFlag(StageRolePolicy.IsTeacher(lp), "(initial)")
+end
+
+teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(flag: boolean, reason: string?)
+        applyTeacherFlag(flag, reason)
+end, { timeoutSec = 15 })
 
 -- 패널 트윈
 local panelTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -136,7 +156,7 @@ end
 
 -- ✅ showBtn은 패널 열려있을 때 hover/press 금지
 setupButtonFX(showBtn, 1.06, 0.96, function()
-        return isTeacher() and (not isPanelOpen())
+        return isTeacher and (not isPanelOpen())
 end)
 
 setupButtonFX(xBtn, 1.08, 0.95)
@@ -145,7 +165,7 @@ setupButtonFX(stopBtn, 1.06, 0.96)
 
 -- Show / X
 showBtn.Activated:Connect(function()
-        if not isTeacher() then return end
+        if not isTeacher then return end
         if isPanelOpen() then return end -- ✅ 이미 열려있으면 무시
 
         playClickSound(showBtn)
@@ -158,7 +178,7 @@ showBtn.Activated:Connect(function()
 end)
 
 xBtn.Activated:Connect(function()
-        if not isTeacher() then return end
+        if not isTeacher then return end
         playClickSound(bg)
 
         tweenPanelTo(POS_HIDE, function()
@@ -175,13 +195,13 @@ local RE_Spawn = Remotes:WaitForChild("Teacher_SpawnAll")
 local RE_Feedback = Remotes:WaitForChild("Teacher_Feedback")
 
 spawnBtn.Activated:Connect(function()
-        if not isTeacher() then return end
+        if not isTeacher then return end
         playClickSound(bg)
         RE_Spawn:FireServer()
 end)
 
 stopBtn.Activated:Connect(function()
-        if not isTeacher() then return end
+        if not isTeacher then return end
         playClickSound(bg)
         RE_Stop:FireServer()
 end)

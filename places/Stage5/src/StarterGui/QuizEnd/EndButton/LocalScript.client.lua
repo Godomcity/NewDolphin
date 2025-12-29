@@ -7,7 +7,7 @@
 local RS      = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
+local StageRolePolicy = require(RS:WaitForChild("Modules"):WaitForChild("StageRolePolicy"))
 
 local player     = Players.LocalPlayer
 local endButton  = script.Parent
@@ -16,33 +16,44 @@ local quizEndGui = endButton:FindFirstAncestorOfClass("ScreenGui")
 local Remotes     = RS:WaitForChild("Remotes")
 local RE_QuizEnd  = Remotes:WaitForChild("Quiz_EndRequest") :: RemoteEvent
 
--- 선생님만 버튼 보이기
-local function isTeacher(): boolean
-        local role = player:GetAttribute("userRole")
-        if Roles.isTeacherRole(role) then
-                return true
-        end
+local currentIsTeacher = false
+local teacherDisconnect: (() -> ())? = nil
 
-        local isTeacherAttr = player:GetAttribute("isTeacher")
-        if typeof(isTeacherAttr) == "boolean" then
-                return isTeacherAttr
-        end
-
-        return false
+if endButton:IsA("GuiObject") then
+endButton.Visible = false
 end
 
-if not isTeacher() then
-        if endButton:IsA("GuiObject") then
-                endButton.Visible = false
-        end
-	return
+local function updateTeacher(isTeacher: boolean, reason: string?)
+currentIsTeacher = isTeacher
+
+if endButton:IsA("GuiObject") then
+endButton.Visible = isTeacher
 end
+
+if isTeacher and teacherDisconnect then
+teacherDisconnect()
+teacherDisconnect = nil
+end
+
+if isTeacher then
+print("[QuizEnd] Teacher detected -> EndButton visible", reason)
+end
+end
+
+if StageRolePolicy.WaitForRoleReplication(player, 12) then
+updateTeacher(StageRolePolicy.IsTeacher(player), "(initial)")
+end
+
+teacherDisconnect = StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: string?)
+updateTeacher(isTeacher, reason)
+end, { timeoutSec = 15 })
 
 local isClicked = false
 
 local function onEndClicked()
-	if isClicked then return end
-	isClicked = true
+if not currentIsTeacher then return end
+if isClicked then return end
+isClicked = true
 
 	-- 버튼 GUI 닫기(선생님 화면)
 	if quizEndGui then
