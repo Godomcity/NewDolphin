@@ -784,12 +784,46 @@ local function openOneQuestion()
 		end
 	end
 
-	local q: QDto? = nil
-	local ok, res = pcall(function()
-		-- solvedList 를 인자로 넘김
-		return (RF_Get :: RemoteFunction):InvokeServer(solvedList)
-	end)
-	if ok then q = res end
+        local q: QDto? = nil
+        local choiceIdByIndex: {[number]: number} = {}
+        local ok, res = pcall(function()
+                -- solvedList 를 인자로 넘김
+                return (RF_Get :: RemoteFunction):InvokeServer(solvedList)
+        end)
+        if ok then
+                -- 서버가 { ok=true, data=dto } 형태로 줄 수 있으므로 풀어서 사용
+                if typeof(res) == "table" and res.ok == true and typeof(res.data) == "table" then
+                        q = res.data
+                else
+                        q = res
+                end
+        end
+
+        if q and typeof(q) == "table" then
+                -- 서버 응답 필드 보정: quizId → id, choices → c 배열
+                if not q.id and q.quizId then
+                        q.id = q.quizId
+                end
+
+                if q.choices and typeof(q.choices) == "table" then
+                        table.sort(q.choices, function(a, b)
+                                return (tonumber(a.choiceNumber) or 0) < (tonumber(b.choiceNumber) or 0)
+                        end)
+
+                        local cTexts: {[number]: string} = {}
+                        for _, ch in ipairs(q.choices) do
+                                local idx = tonumber(ch.choiceNumber) or 0
+                                if idx >= 1 and idx <= 4 then
+                                        cTexts[idx] = tostring(ch.choiceText or ch.text or ch.title or "")
+                                        choiceIdByIndex[idx] = tonumber(ch.quizChoiceId) or tonumber(ch.id) or idx
+                                end
+                        end
+
+                        if next(cTexts) then
+                                q.c = cTexts
+                        end
+                end
+        end
 
 	if not q or not q.id then
 		print("[QuizClient] no more unsolved questions from server")
@@ -895,11 +929,13 @@ local function openOneQuestion()
 		inputLocked = true
 		attemptCount += 1
 
-		local result = nil
-		local ok2, res2 = pcall(function()
-			return (RF_Check :: RemoteFunction):InvokeServer(currentQid, selected :: number)
-		end)
-		if ok2 then result = res2 end
+                local result = nil
+                local choiceId = choiceIdByIndex[selected :: number] or selected :: number
+                local quizStorageId = (q and q.quizStorageId) or currentQid
+                local ok2, res2 = pcall(function()
+                        return (RF_Check :: RemoteFunction):InvokeServer(choiceId, quizStorageId)
+                end)
+                if ok2 then result = res2 end
 
 		local isCorrect = result and result.correct == true
 
