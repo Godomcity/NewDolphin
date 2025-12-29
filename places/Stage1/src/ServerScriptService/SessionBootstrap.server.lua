@@ -199,12 +199,12 @@ Players.PlayerAdded:Connect(function(plr: Player)
 	debugPrintJoinData(plr, joinData)
 
 	-- 3) Stage1 재접속용 Resume 저장
-	if typeof(finalSid) == "string" and finalSid ~= "" then
-		print(("[Stage1 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
-			plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
-			))
-		SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId)
-	end
+if typeof(finalSid) == "string" and finalSid ~= "" then
+print(("[Stage1 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
+plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
+))
+SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId, plr:GetAttribute("userRole"))
+end
 end)
 
 print("[Stage1 SessionBootstrap] READY (sessionId + userRole/isTeacher/roomCode + SessionResume + debug)")

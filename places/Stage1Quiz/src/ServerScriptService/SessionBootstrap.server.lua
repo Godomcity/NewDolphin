@@ -102,13 +102,13 @@ Players.PlayerAdded:Connect(function(plr: Player)
 	-- 디버그용: JoinData 전체 로그
 	debugPrintJoinData(plr)
 
-	-- 2) Stage1 재접속용 Resume 정보 저장
-	if finalSid and finalSid ~= "" then
-		print(("[Stage1 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
-			plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
-			))
-		SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId)
-	end
+-- 2) Stage1 재접속용 Resume 정보 저장
+if finalSid and finalSid ~= "" then
+print(("[Stage1 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
+plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
+))
+SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId, plr:GetAttribute("userRole"))
+end
 end)
 
 print("[Stage1 SessionBootstrap] READY (with SessionResume + debug)")

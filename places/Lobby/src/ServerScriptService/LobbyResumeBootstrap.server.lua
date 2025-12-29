@@ -27,18 +27,26 @@ if not RE_Gui then
 	RE_Gui.Parent = Remotes
 end
 
-local function buildTeleportDataForResume(sessionId: string, device: string, placeId: number, reservedCode: string?, stage: number?)
-	return {
-		version = 2,
-		session = {
-			id = sessionId,
-			placeId = placeId,
-			privateServerCode = reservedCode,
-		},
-		player = {
-			device = device,
-		},
-		selectedStage = stage or 1,
+local function buildTeleportDataForResume(
+sessionId: string,
+device: string,
+placeId: number,
+reservedCode: string?,
+stage: number?,
+userRole: string?
+)
+return {
+version = 2,
+session = {
+id = sessionId,
+placeId = placeId,
+privateServerCode = reservedCode,
+},
+player = {
+device = device,
+userRole = userRole,
+},
+selectedStage = stage or 1,
 		reservedCodes = {
 			[tostring(placeId)] = reservedCode,
 		},
@@ -67,11 +75,16 @@ local function tryAutoResume(player: Player)
 		return
 	end
 	
-	RE_Gui:FireClient(player, { mode = "show", reason = "resume_found" })
-	
-	local sessionId     = resume.sessionId
-	local targetPlaceId = resume.placeId
-	local stage         = resume.stage
+		RE_Gui:FireClient(player, { mode = "show", reason = "resume_found" })
+
+		local sessionId     = resume.sessionId
+		local targetPlaceId = resume.placeId
+		local stage         = resume.stage
+		local userRole      = resume.userRole
+
+		if (not userRole or userRole == "") and typeof(player:GetAttribute("userRole")) == "string" then
+			userRole = player:GetAttribute("userRole") :: string
+		end
 
 	if not sessionId or not targetPlaceId then
 		print("[LobbyResume] invalid resume fields, stay in lobby")
@@ -109,7 +122,7 @@ local function tryAutoResume(player: Player)
 		end
 	end
 
-	local tpData = buildTeleportDataForResume(sessionId, device, targetPlaceId, reservedCode, stage)
+		local tpData = buildTeleportDataForResume(sessionId, device, targetPlaceId, reservedCode, stage, userRole)
 
 	local opts = Instance.new("TeleportOptions")
 	opts.ReservedServerAccessCode = reservedCode
