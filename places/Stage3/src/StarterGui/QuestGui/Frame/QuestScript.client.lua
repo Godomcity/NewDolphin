@@ -6,13 +6,27 @@
 --      :Fire("complete") / :Fire("next")  → 다음 퀘스트로, 마지막(4번) 이후에는 줄 긋기
 --      :Fire({ type="trashProgress", count=n, total=10 }) → 2번 퀘스트 진행도 n/10 갱신
 
-local Players     = game:GetService("Players")
-local RS          = game:GetService("ReplicatedStorage")
-local TweenService= game:GetService("TweenService") -- ★ 슬라이드용
+local Players      = game:GetService("Players")
+local RS           = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService") -- ★ 슬라이드용
 
 local LP = Players.LocalPlayer
 
-local TEACHER_USERID = 2783482612
+local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
+
+local function isTeacher(): boolean
+        local role = LP:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = LP:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
+end
 
 -- ===== 퀘스트 변경 사운드 =====
 local QUEST_CHANGE_SFX_ID = "rbxassetid://7740696902"
@@ -69,19 +83,19 @@ local SLIDE_TIME   = 0.45        -- 애니메이션 시간
 local SLIDE_OFFSET = -1.0        -- 왼쪽 화면 밖에서 시작(-1.0 만큼 왼쪽)
 
 do
-	if LP.UserId == TEACHER_USERID then
-		-- Quest 프레임 숨김
-		questRoot.Visible = false
+        if isTeacher() then
+                -- Quest 프레임 숨김
+                questRoot.Visible = false
 
-		-- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
-		local gui = root:FindFirstAncestorOfClass("ScreenGui")
-		if gui then
-			gui.Enabled = false
-		end
+                -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
+                local gui = root:FindFirstAncestorOfClass("ScreenGui")
+                if gui then
+                        gui.Enabled = false
+                end
 
-		print("[QuestClient] Teacher detected -> QuestGui hidden")
-		return
-	end
+                print("[QuestClient] Teacher detected -> QuestGui hidden")
+                return
+        end
 end
 
 -- ===== 상태 저장 =====

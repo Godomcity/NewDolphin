@@ -17,6 +17,8 @@ local RS               = game:GetService("ReplicatedStorage")
 local MessagingService = game:GetService("MessagingService")
 local RunService       = game:GetService("RunService")
 
+local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
+
 local sessionResume = require(script.Parent:WaitForChild("Modules"):WaitForChild("SessionResume"))
 local hubStartState = require(script.Parent:WaitForChild("Modules"):WaitForChild("HubStartState"))
 ----------------------------------------------------------------
@@ -56,8 +58,6 @@ end
 ----------------------------------------------------------------
 -- 설정
 ----------------------------------------------------------------
-local TEACHER_USER_ID = 2783482612
-
 -- 컷씬 브로드캐스트 채널
 local CUTSCENE_CHANNEL_FINAL = "FinalCutscene_Global_v1"
 local CUTSCENE_CHANNEL_QUIZ  = "QuizEnd_Global_v1"
@@ -77,8 +77,19 @@ local REASON_FINAL = "final_zone"
 local alreadyHandled: {[string]: boolean} = {}
 
 local function isTeacher(plr: Player): boolean
-	if RunService:IsStudio() then return true end
-	return plr.UserId == TEACHER_USER_ID
+        if RunService:IsStudio() then return true end
+
+        local role = plr:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = plr:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
 end
 
 local function getSessionIdFrom(plr: Player, payload: any): string?
