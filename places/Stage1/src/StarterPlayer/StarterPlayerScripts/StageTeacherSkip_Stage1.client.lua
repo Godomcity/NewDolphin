@@ -13,6 +13,7 @@ wait(5)
 
 local Players            = game:GetService("Players")
 local RS                 = game:GetService("ReplicatedStorage")
+local ReplicatedFirst    = game:GetService("ReplicatedFirst")
 local Workspace          = game:GetService("Workspace")
 local CollectionService  = game:GetService("CollectionService")
 
@@ -64,10 +65,10 @@ local PortalMover =
 -- 포탈 템플릿 (DialogueUI/PortalSpawnCutscene 에서 쓰던 "Potal" 기준)
 local PortalTemplate: Model? = nil
 do
-	local t = RS:FindFirstChild("Potal")
-	if t and t:IsA("Model") then
-		PortalTemplate = t
-	end
+        local t = ReplicatedFirst:FindFirstChild("Potal") or RS:FindFirstChild("Potal")
+        if t and t:IsA("Model") then
+                PortalTemplate = t
+        end
 end
 
 local QuestGuideBus: BindableEvent? do
@@ -369,6 +370,7 @@ local function monitorTeacherFlag()
 
                         local disconnect: (() -> ())? = nil
 
+<<<<<<< HEAD
                         local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
                         if observeBroadcast then
                                 teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
@@ -377,6 +379,13 @@ local function monitorTeacherFlag()
                                         end
                                 end, 12)
                         end
+=======
+                        teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(LP, function(_, isTeacher)
+                                if isTeacher then
+                                        startTeacherFlow("(TeacherRoleUpdated)")
+                                end
+                        end, 12)
+>>>>>>> main
 
                         local function onTeacherChanged(isTeacher: boolean, reason: string?)
                                 if not isTeacher or teacherFlowStarted then

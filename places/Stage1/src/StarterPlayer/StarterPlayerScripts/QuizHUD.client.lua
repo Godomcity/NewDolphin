@@ -1,14 +1,13 @@
 -- StarterPlayerScripts/QuizHUD.lua
 --!strict
--- ReplicatedStorage.QuizHudBus (BindableEvent)를 받아서
+-- ReplicatedFirst.QuizHudBus (BindableEvent)를 받아서
 -- HUDGui (Frame/BackGround/BarBackGround/Bar, ProgressText)를 업데이트
 -- - 정답: 초록 화면 플래시 + 가운데 동그라미 링 연출
 -- - 오답: 빨간 화면 플래시
 -- - Bar 는 X 스케일만 늘어나고, Y 스케일은 0.4 고정
 
 local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
-local StarterGuiService = game:GetService("StarterGui")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local TweenService = game:GetService("TweenService")
 
 local LP = Players.LocalPlayer
@@ -75,26 +74,28 @@ local function ensureUI(): UIRefs?
 		end
 	end
 
-	if not ui then
-		local template = StarterGuiService:FindFirstChild("HUDGui")
-		if template and template:IsA("ScreenGui") then
-			local clone = template:Clone()
-			clone.ResetOnSpawn = false
-			clone.Parent = pg
-			ui = buildUIRefs(clone)
-		end
-	end
+        if not ui then
+                local template = ReplicatedFirst:FindFirstChild("HUDGui")
+                if template and template:IsA("ScreenGui") then
+                        local clone = template:Clone()
+                        clone.ResetOnSpawn = false
+                        clone.Parent = pg
+                        ui = buildUIRefs(clone)
+                end
+        end
 
-	if not ui then
-		warn("[QuizHUD] HUDGui 구조를 찾지 못했습니다. HUDGui/Frame/BackGround/BarBackGround/Bar, ProgressText 를 확인하세요.")
-		return nil
-	end
+        if not ui then
+                warn("[QuizHUD] HUDGui 구조를 찾지 못했습니다. ReplicatedFirst.HUDGui/Frame/BackGround/BarBackGround/Bar, ProgressText 를 확인하세요.")
+                return nil
+        end
 
 	-- 진행 텍스트를 플래시 프레임보다 위로 올리기
-	ui.txt.ZIndex = 42  -- Overlay가 40이니까 이것보다 크게
+        ui.txt.ZIndex = 42  -- Overlay가 40이니까 이것보다 크게
 
-	return ui
+        return ui
 end
+
+task.defer(ensureUI)
 
 -- ========= 전체 화면 플래시 =========
 local function getOrCreateFlashOverlay()
@@ -304,12 +305,12 @@ end
 
 -- ========= 메인 =========
 task.spawn(function()
-	local anyObj = RS:WaitForChild("QuizHudBus")
-	if not anyObj or not anyObj:IsA("BindableEvent") then
-		warn("[QuizHUD] QuizHudBus 가 BindableEvent 가 아닙니다. ReplicatedStorage 아래에 BindableEvent 로 만들어 주세요.")
-		return
-	end
-	local bus = anyObj :: BindableEvent
+        local anyObj = ReplicatedFirst:WaitForChild("QuizHudBus")
+        if not anyObj or not anyObj:IsA("BindableEvent") then
+                warn("[QuizHUD] QuizHudBus 가 BindableEvent 가 아닙니다. ReplicatedFirst 아래에 BindableEvent 로 만들어 주세요.")
+                return
+        end
+        local bus = anyObj :: BindableEvent
 
 	bus.Event:Connect(function(cmd: any, payload: any)
 		if cmd == "show" then

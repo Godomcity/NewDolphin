@@ -12,6 +12,7 @@ wait(2)
 
 local Players            = game:GetService("Players")
 local RS                 = game:GetService("ReplicatedStorage")
+local ReplicatedFirst    = game:GetService("ReplicatedFirst")
 local Workspace          = game:GetService("Workspace")
 local CollectionService  = game:GetService("CollectionService")
 
@@ -66,17 +67,16 @@ local LadderCinematic =
 	tryRequire(RS:FindFirstChild("Modules") and RS.Modules:FindFirstChild("LadderCinematic"))
 	or tryRequire(RS:FindFirstChild("LadderCinematic"))
 
--- ★ Stage2 사다리 템플릿 / 위치 (QuizClient와 동일 값)
-local LADDER_TEMPLATE: Instance? = RS:FindFirstChild("Stage2Ladder")
+local LADDER_TEMPLATE: Instance? = ReplicatedFirst:FindFirstChild("Stage2Ladder")
 local LADDER_POS = Vector3.new(-59.745, 29.593, 125.927)
 
 -- 포탈 템플릿 (Potal)
 local PortalTemplate: Model? = nil
 do
-	local t = RS:FindFirstChild("Potal")
-	if t and t:IsA("Model") then
-		PortalTemplate = t
-	end
+        local t = ReplicatedFirst:FindFirstChild("Potal")
+        if t and t:IsA("Model") then
+                PortalTemplate = t
+        end
 end
 
 local QuestGuideBus: BindableEvent? do
@@ -224,10 +224,10 @@ end
 -- 4) 선생님용 포탈 스폰
 ----------------------------------------------------------------
 local function spawnPortalForTeacher(): Instance?
-	if not PortalTemplate then
-		warn("[StageTeacherSkip_Stage1] PortalTemplate 'Potal' not found in ReplicatedStorage")
-		return nil
-	end
+        if not PortalTemplate then
+                warn("[StageTeacherSkip_Stage1] PortalTemplate 'Potal' not found in ReplicatedFirst")
+                return nil
+        end
 
 	local targetPos = Vector3.new(-161.618, 68.906, 143.565)
 	local clone = PortalTemplate:Clone()
@@ -371,6 +371,7 @@ local function monitorTeacherFlag()
 
                         local disconnect: (() -> ())? = nil
 
+<<<<<<< HEAD
                         local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
                         if observeBroadcast then
                                 teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
@@ -379,6 +380,13 @@ local function monitorTeacherFlag()
                                         end
                                 end, 12)
                         end
+=======
+                        teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(LP, function(_, isTeacher)
+                                if isTeacher then
+                                        startTeacherFlow("(TeacherRoleUpdated)")
+                                end
+                        end, 12)
+>>>>>>> main
 
                         local function onTeacherChanged(isTeacher: boolean, reason: string?)
                                 if not isTeacher or teacherFlowStarted then

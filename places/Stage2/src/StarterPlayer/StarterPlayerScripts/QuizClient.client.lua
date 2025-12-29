@@ -10,6 +10,7 @@
 
 local Players                 = game:GetService("Players")
 local RS                      = game:GetService("ReplicatedStorage")
+local ReplicatedFirst         = game:GetService("ReplicatedFirst")
 local TweenService            = game:GetService("TweenService")
 local ProximityPromptService  = game:GetService("ProximityPromptService")
 local Workspace               = game:GetService("Workspace")
@@ -84,15 +85,15 @@ end
 
 -- ========= HUD / 퀘스트 / 가이드 버스 =========
 local QuizHudBus: BindableEvent do
-	local obj = RS:FindFirstChild("QuizHudBus")
-	if obj and obj:IsA("BindableEvent") then
-		QuizHudBus = obj
-	else
-		local ev = Instance.new("BindableEvent")
-		ev.Name = "QuizHudBus"
-		ev.Parent = RS
-		QuizHudBus = ev
-	end
+        local obj = ReplicatedFirst:FindFirstChild("QuizHudBus")
+        if obj and obj:IsA("BindableEvent") then
+                QuizHudBus = obj
+        else
+                local ev = Instance.new("BindableEvent")
+                ev.Name = "QuizHudBus"
+                ev.Parent = ReplicatedFirst
+                QuizHudBus = ev
+        end
 end
 
 local QuestProgressBus: BindableEvent do
@@ -184,8 +185,8 @@ local LOCAL_PROMPT_NAME   = "_ClientOnlyPrompt"
 local STAGE2_LADDER_NAME      = "Stage2Ladder"
 local STAGE2_LADDER_FIXED_POS = Vector3.new(-59.745, 29.593, 125.927)
 
--- 🔹 사다리 템플릿 (ReplicatedStorage 안에 있어야 함)
-local LADDER_TEMPLATE = RS:WaitForChild("Stage2Ladder")
+-- 🔹 사다리 템플릿 (ReplicatedFirst 안에 있어야 함)
+local LADDER_TEMPLATE = ReplicatedFirst:WaitForChild("Stage2Ladder")
 local LADDER_POS      = STAGE2_LADDER_FIXED_POS
 
 -- 🔹 카메라 연출용 포인트들 (테스트 스크립트 값 그대로)

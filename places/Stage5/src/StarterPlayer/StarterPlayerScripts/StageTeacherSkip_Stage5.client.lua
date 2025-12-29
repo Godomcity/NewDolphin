@@ -14,6 +14,7 @@ wait(2)
 
 local Players            = game:GetService("Players")
 local RS                 = game:GetService("ReplicatedStorage")
+local ReplicatedFirst    = game:GetService("ReplicatedFirst")
 local Workspace          = game:GetService("Workspace")
 local CollectionService  = game:GetService("CollectionService")
 
@@ -70,10 +71,10 @@ local MiddleDoorCutscene =
 -- 포탈 템플릿 (DialogueUI/PortalSpawnCutscene 에서 쓰던 "Potal" 기준)
 local PortalTemplate: Model? = nil
 do
-	local t = RS:FindFirstChild("Potal")
-	if t and t:IsA("Model") then
-		PortalTemplate = t
-	end
+        local t = ReplicatedFirst:FindFirstChild("Potal")
+        if t and t:IsA("Model") then
+                PortalTemplate = t
+        end
 end
 
 local QuestGuideBus: BindableEvent? do
@@ -243,10 +244,10 @@ end
 -- 4) 선생님용 포탈 스폰 (컷씬/카메라 없이, 템플릿만 복제해서 활성화)
 ----------------------------------------------------------------
 local function spawnPortalForTeacher(): Instance?
-	if not PortalTemplate then
-		warn("[StageTeacherSkip_Stage1] PortalTemplate 'Potal' not found in ReplicatedStorage")
-		return nil
-	end
+        if not PortalTemplate then
+                warn("[StageTeacherSkip_Stage1] PortalTemplate 'Potal' not found in ReplicatedFirst")
+                return nil
+        end
 
 	-- Stage1/Stage3 포탈 좌표: 필요에 따라 수정
 	local targetPos = Vector3.new(-121.761, 41.192, -449.471)
@@ -357,6 +358,7 @@ local function monitorTeacherFlag()
 
                         local disconnect: (() -> ())? = nil
 
+<<<<<<< HEAD
                         local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
                         if observeBroadcast then
                                 teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
@@ -365,6 +367,13 @@ local function monitorTeacherFlag()
                                         end
                                 end, 12)
                         end
+=======
+                        teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(LP, function(_, isTeacher)
+                                if isTeacher then
+                                        startTeacherFlow("(TeacherRoleUpdated)")
+                                end
+                        end, 12)
+>>>>>>> main
 
                         local function onTeacherChanged(isTeacher: boolean, reason: string?)
                                 if not isTeacher or teacherFlowStarted then
