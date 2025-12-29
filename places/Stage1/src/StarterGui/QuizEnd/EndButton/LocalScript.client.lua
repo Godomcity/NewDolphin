@@ -30,28 +30,17 @@ local function isTeacher(): boolean
         return false
 end
 
-local function updateVisibility()
-        if not endButton:IsA("GuiObject") then
-                return
+-- 선생님만 버튼 보이기
+if not isTeacher() then
+        if endButton:IsA("GuiObject") then
+                endButton.Visible = false
         end
-
-        local teacher = isTeacher()
-        endButton.Visible = teacher
-        if teacher then
-                endButton.Active = true
-        else
-                endButton.Active = false
-        end
+        return
 end
-
-updateVisibility()
-player:GetAttributeChangedSignal("userRole"):Connect(updateVisibility)
-player:GetAttributeChangedSignal("isTeacher"):Connect(updateVisibility)
 
 local isClicked = false
 
 local function onEndClicked()
-        if not isTeacher() then return end
         if isClicked then return end
         isClicked = true
 

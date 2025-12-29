@@ -198,13 +198,13 @@ Players.PlayerAdded:Connect(function(plr: Player)
         -- 디버그 로그
         debugPrintJoinData(plr, joinData)
 
-        -- 3) Stage2 재접속용 Resume 저장
-        if typeof(finalSid) == "string" and finalSid ~= "" then
-                print(("[Stage2 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
-                        plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
-                        ))
-                SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId)
-        end
+-- 3) Stage2 재접속용 Resume 저장
+if typeof(finalSid) == "string" and finalSid ~= "" then
+print(("[Stage2 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
+plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
+))
+SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId, plr:GetAttribute("userRole"))
+end
 end)
 
 print("[Stage2 SessionBootstrap] READY (sessionId + userRole/isTeacher/roomCode + SessionResume + debug)")

@@ -37,34 +37,20 @@ local function isTeacher(): boolean
         return false
 end
 
+local function isPanelOpen(): boolean
+        return bg.Visible == true
+end
+
+-- 선생님만 UI 보이게
+showBtn.Visible = isTeacher()
+bg.Visible = false
+
 -- ✅ 패널 Position: 열기 X=2.987, 닫기 X=0 (Y=2.343 고정)
 local Y_SCALE = 2.3
 local POS_SHOW = UDim2.new(2.987, 0, Y_SCALE, 0)
 local POS_HIDE = UDim2.new(0, 0, Y_SCALE, 0)
 
 bg.Position = POS_HIDE
-
-local function isPanelOpen(): boolean
-        return bg.Visible == true
-end
-
--- 선생님만 UI 보이게
-local function updateTeacherUI()
-        local teacher = isTeacher()
-        showBtn.Visible = teacher
-        showBtn.Active = teacher and (not isPanelOpen())
-
-        if not teacher then
-                bg.Visible = false
-                bg.Position = POS_HIDE
-        end
-end
-
-updateTeacherUI()
-lp:GetAttributeChangedSignal("userRole"):Connect(updateTeacherUI)
-lp:GetAttributeChangedSignal("isTeacher"):Connect(updateTeacherUI)
-
-bg.Visible = false
 
 -- 패널 트윈
 local panelTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)

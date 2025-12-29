@@ -1,8 +1,8 @@
 -- ServerScriptService/Modules/SessionResume.lua
 --!strict
 -- 플레이어가 "마지막으로 어느 세션/스테이지에 있었는지"를 저장/조회하는 모듈
---  - Save(player, sessionId, stage, placeId)
---  - Get(userId) -> { sessionId, stage, placeId, updatedAt }?
+--  - Save(player, sessionId, stage, placeId, userRole)
+--  - Get(userId) -> { sessionId, stage, placeId, updatedAt, userRole }?
 --  - Clear(userId)                 -- 특정 유저만 초기화
 --  - ClearSession(sessionId)       -- 특정 세션에 속한 모든 유저 초기화
 --  - ClearAll()                    -- (옵션) 전체 초기화
@@ -13,10 +13,11 @@ local DataStoreService = game:GetService("DataStoreService")
 local RESUME_DS = DataStoreService:GetDataStore("SessionResume_v1")
 
 export type ResumeData = {
-	sessionId: string,
-	stage: number?,
-	placeId: number?,
-	updatedAt: number?,
+sessionId: string,
+stage: number?,
+placeId: number?,
+updatedAt: number?,
+userRole: string?,
 }
 
 local KEY_PREFIX = "U:"
@@ -33,15 +34,16 @@ end
 
 -- 플레이어가 특정 세션/스테이지에 "안착"했을 때 호출
 --  예: Stage2 입구에 도착했을 때 Save(player, sid, 2, Stage2PlaceId)
-function M.Save(player: Player, sessionId: string, stage: number?, placeId: number?)
-	local key = getKey(player.UserId)
+function M.Save(player: Player, sessionId: string, stage: number?, placeId: number?, userRole: string?)
+local key = getKey(player.UserId)
 
-	local toSave: ResumeData = {
-		sessionId = sessionId,
-		stage = stage,
-		placeId = placeId,
-		updatedAt = os.time(),
-	}
+local toSave: ResumeData = {
+sessionId = sessionId,
+stage = stage,
+placeId = placeId,
+updatedAt = os.time(),
+userRole = userRole,
+}
 
 	local ok, err = pcall(function()
 		-- 간단히 SetAsync 사용 (너무 자주 저장하면 쿨다운 걸릴 수 있으니, 중요한 순간에만 Save 호출!)

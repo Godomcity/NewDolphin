@@ -679,13 +679,45 @@ local function openOneQuestion()
 		if flag then table.insert(solvedList, qidStr) end
 	end
 
-	-- 문제 1개 가져오기
-	local q: QDto? = nil
-	local ok, res = pcall(function()
-		-- 서버는 solvedList 를 무시해도 됨 (옵션 파라미터)
-		return (RF_Get :: RemoteFunction):InvokeServer(solvedList)
-	end)
-	if ok then q = res end
+        -- 문제 1개 가져오기
+        local q: QDto? = nil
+        local choiceIdByIndex: {[number]: number} = {}
+        local ok, res = pcall(function()
+                -- 서버는 solvedList 를 무시해도 됨 (옵션 파라미터)
+                return (RF_Get :: RemoteFunction):InvokeServer(solvedList)
+        end)
+        if ok then
+                if typeof(res) == "table" and res.ok == true and typeof(res.data) == "table" then
+                        q = res.data
+                else
+                        q = res
+                end
+        end
+
+        if q and typeof(q) == "table" then
+                if not q.id and q.quizId then
+                        q.id = q.quizId
+                end
+
+                if q.choices and typeof(q.choices) == "table" then
+                        table.sort(q.choices, function(a, b)
+                                return (tonumber(a.choiceNumber) or 0) < (tonumber(b.choiceNumber) or 0)
+                        end)
+
+                        local cTexts: {[number]: string} = {}
+                        for _, ch in ipairs(q.choices) do
+                                local idx = tonumber(ch.choiceNumber) or 0
+                                if idx >= 1 and idx <= 4 then
+                                        cTexts[idx] = tostring(ch.choiceText or ch.text or ch.title or "")
+                                        choiceIdByIndex[idx] = tonumber(ch.quizChoiceId) or tonumber(ch.id) or idx
+                                end
+                        end
+
+                        if next(cTexts) then
+                                q.c = cTexts
+                        end
+                end
+        end
 	if not q or not q.id then gui.Enabled=false busy=false return end
 	local currentQid = q.id
 	local currentQidStr = tostring(currentQid)
@@ -783,11 +815,13 @@ local function openOneQuestion()
 		inputLocked = true
 		attempts += 1
 
-		local result = nil
-		local ok2, res2 = pcall(function()
-			return (RF_Check :: RemoteFunction):InvokeServer(currentQid, selected :: number)
-		end)
-		if ok2 then result = res2 end
+                local result = nil
+                local choiceId = choiceIdByIndex[selected :: number] or selected :: number
+                local quizStorageId = (q and q.quizStorageId) or currentQid
+                local ok2, res2 = pcall(function()
+                        return (RF_Check :: RemoteFunction):InvokeServer(choiceId, quizStorageId)
+                end)
+                if ok2 then result = res2 end
 
 		local isCorrect = result and result.correct == true
 
