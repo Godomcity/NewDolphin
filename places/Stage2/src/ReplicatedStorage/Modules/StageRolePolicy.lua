@@ -93,6 +93,10 @@ local function waitForTeacherBroadcast(plr: Player, timeout: number): boolean
                 return false
         end
 
+        if timeout <= 0 then
+                return false
+        end
+
         local event = resolveTeacherRoleEvent(timeout)
         if not event then
                 return false
@@ -160,7 +164,10 @@ function M.WaitForRoleReplication(plr: Player, timeoutSec: number?): boolean
                 return true
         end
 
-        waitForTeacherBroadcast(plr, timeout)
+        local remaining = deadline - os.clock()
+        if remaining > 0 then
+                waitForTeacherBroadcast(plr, remaining)
+        end
 
         while os.clock() < deadline do
                 if hasRoleAttributes(plr) then
