@@ -90,6 +90,7 @@ local LOCAL_PROMPT_NAME   = "_ClientOnlyPrompt"
 local DISAPPEAR_TAGS = { "Disappear", "VanishOnCorrect", "Box", "seaShell" }
 
 local teacherFlowStarted = false
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 ----------------------------------------------------------------
 -- 1) 퀴즈/퀘스트 관련 ProximityPrompt 비활성화
@@ -314,10 +315,15 @@ end
 -- 메인 실행
 ----------------------------------------------------------------
 local function startTeacherFlow(reason: string?)
-	if teacherFlowStarted then return end
-	teacherFlowStarted = true
+        if teacherFlowStarted then return end
+        teacherFlowStarted = true
 
-	print("[StageTeacherSkip_Stage1] Teacher detected → show cleared state, skip Stage1 flows", reason)
+        if teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
+        print("[StageTeacherSkip_Stage1] Teacher detected → show cleared state, skip Stage1 flows", reason)
 
 	task.defer(function()
 		-- 1) 먼저 프롬프트 막기 (선생님은 트리거 자체가 안 되도록 → 컷씬/문제 스킵)
@@ -362,6 +368,12 @@ local function monitorTeacherFlag()
                         end
 
                         local disconnect: (() -> ())? = nil
+
+                        teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(LP, function(_, isTeacher)
+                                if isTeacher then
+                                        startTeacherFlow("(TeacherRoleUpdated)")
+                                end
+                        end, 12)
 
                         local function onTeacherChanged(isTeacher: boolean, reason: string?)
                                 if not isTeacher or teacherFlowStarted then

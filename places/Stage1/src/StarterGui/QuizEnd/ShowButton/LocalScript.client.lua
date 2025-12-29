@@ -25,6 +25,7 @@ local stopBtn = bg:WaitForChild("StopButton") :: GuiButton
 
 local isTeacher = false
 local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 -- ✅ 패널 Position: 열기 X=2.987, 닫기 X=0 (Y=2.343 고정)
 local Y_SCALE = 2.3
@@ -56,6 +57,11 @@ local function applyTeacherFlag(flag: boolean, reason: string?)
                 teacherDisconnect = nil
         end
 
+        if flag and teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
         if flag then
                 print("[QuizEnd] Teacher detected -> teacher panel enabled", reason)
         end
@@ -71,6 +77,12 @@ end
 teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(flag: boolean, reason: string?)
         applyTeacherFlag(flag, reason)
 end, { timeoutSec = 15 })
+
+teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(lp, function(_, flag)
+        if typeof(flag) == "boolean" then
+                applyTeacherFlag(flag, "(TeacherRoleUpdated)")
+        end
+end, 15)
 
 -- 패널 트윈
 local panelTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
