@@ -69,6 +69,7 @@ local SLIDE_TIME   = 0.45        -- 애니메이션 시간
 local SLIDE_OFFSET = -1.0        -- 왼쪽 화면 밖에서 시작(-1.0 만큼 왼쪽)
 
 local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 local function hideQuestForTeacher(reason: string?)
         questRoot.Visible = false
@@ -84,10 +85,24 @@ local function hideQuestForTeacher(reason: string?)
                 teacherDisconnect = nil
         end
 
+        if teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
         print("[QuestClient] Teacher detected -> QuestGui hidden", reason)
 end
 
 local function ensureQuestHiddenForTeacher(): boolean
+        local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+        if observeBroadcast then
+                teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
+                        if isTeacher then
+                                hideQuestForTeacher("(TeacherRoleUpdated)")
+                        end
+                end, 15)
+        end
+
         if StageRolePolicy.WaitForRoleReplication(LP, 12) then
                 if StageRolePolicy.IsTeacher(LP) then
                         hideQuestForTeacher("(initial)")

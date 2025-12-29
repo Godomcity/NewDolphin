@@ -16,12 +16,21 @@ local RE_Lock = Remotes:WaitForChild("Teacher_ClientLock")
 local currentIsTeacher = false
 
 if StageRolePolicy.WaitForRoleReplication(lp, 12) then
-currentIsTeacher = StageRolePolicy.IsTeacher(lp)
+        currentIsTeacher = StageRolePolicy.IsTeacher(lp)
 end
 
 StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
-currentIsTeacher = isTeacher
+        currentIsTeacher = isTeacher
 end, { timeoutSec = 15 })
+
+local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+if observeBroadcast then
+        observeBroadcast(lp, function(_, isTeacher)
+                if typeof(isTeacher) == "boolean" then
+                        currentIsTeacher = isTeacher
+                end
+        end, 15)
+end
 
 RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
         -- 선생님은 항상 제외

@@ -7,15 +7,18 @@
 -- + 디버그용으로 JobId / TeleportData 로그
 
 local Players             = game:GetService("Players")
+local ReplicatedStorage   = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local RunService          = game:GetService("RunService")
 
 local SessionResume = require(ServerScriptService:WaitForChild("Modules"):WaitForChild("SessionResume"))
+local Net = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net"))
 
 local playerPassThrough = require(ServerScriptService:WaitForChild("Modules"):WaitForChild("PlayerPassThrough"))
 playerPassThrough.Enable()
 
 local STAGE_NUMBER = 4
+local RE_TeacherRoleUpdated = Net.ensureRE("TeacherRoleUpdated")
 
 ----------------------------------------------------------------
 -- TeleportData Extractors
@@ -183,6 +186,12 @@ Players.PlayerAdded:Connect(function(plr: Player)
                         if rc and rc ~= "" then
                                 plr:SetAttribute("roomCode", rc)
                         end
+                end
+
+                local teacherFlag = plr:GetAttribute("isTeacher")
+                local roleValue = plr:GetAttribute("userRole")
+                if RE_TeacherRoleUpdated then
+                        RE_TeacherRoleUpdated:FireAllClients(plr.UserId, roleValue, teacherFlag)
                 end
         end
 

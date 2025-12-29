@@ -32,6 +32,7 @@ local StageRolePolicy =
         or tryRequire(RS:FindFirstChild("StageRolePolicy"))
 
 local teacherFlowStarted = false
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 local function detectTeacher(): boolean
         if StageRolePolicy and typeof(StageRolePolicy.IsTeacher) == "function" then
@@ -386,6 +387,15 @@ local function monitorTeacherFlag()
                         end
 
                         local disconnect: (() -> ())? = nil
+
+                        local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+                        if observeBroadcast then
+                                teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
+                                        if isTeacher then
+                                                startTeacherFlow("(TeacherRoleUpdated)")
+                                        end
+                                end, 12)
+                        end
 
                         local function onTeacherChanged(isTeacher: boolean, reason: string?)
                                 if not isTeacher or teacherFlowStarted then

@@ -21,6 +21,7 @@ questLabel.RichText = true
 
 -- ✅ 선생님은 QuestGui 안 보이게(아예 로직 실행 X)
 local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 local function hideQuestForTeacher(reason: string?)
         questRoot.Visible = false
@@ -36,10 +37,24 @@ local function hideQuestForTeacher(reason: string?)
                 teacherDisconnect = nil
         end
 
+        if teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
         print("[QuestClient] Teacher detected -> QuestGui hidden", reason)
 end
 
 local function ensureQuestHiddenForTeacher(): boolean
+        local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+        if observeBroadcast then
+                teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
+                        if isTeacher then
+                                hideQuestForTeacher("(TeacherRoleUpdated)")
+                        end
+                end, 15)
+        end
+
         if StageRolePolicy.WaitForRoleReplication(LP, 12) then
                 if StageRolePolicy.IsTeacher(LP) then
                         hideQuestForTeacher("(initial)")

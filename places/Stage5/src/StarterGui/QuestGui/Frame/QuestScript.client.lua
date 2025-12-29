@@ -73,39 +73,54 @@ local SLIDE_TIME   = 0.45        -- 애니메이션 시간
 local SLIDE_OFFSET = -1.0        -- 왼쪽 화면 밖에서 시작(-1.0 만큼 왼쪽)
 
 local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 local function hideQuestForTeacher(reason: string?)
-questRoot.Visible = false
+        questRoot.Visible = false
 
--- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
-local gui = root:FindFirstAncestorOfClass("ScreenGui")
-if gui then
-gui.Enabled = false
-end
+        -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
+        local gui = root:FindFirstAncestorOfClass("ScreenGui")
+        if gui then
+                gui.Enabled = false
+        end
 
-if teacherDisconnect then
-teacherDisconnect()
-teacherDisconnect = nil
-end
+        if teacherDisconnect then
+                teacherDisconnect()
+                teacherDisconnect = nil
+        end
 
-print("[QuestClient] Teacher detected -> QuestGui hidden", reason)
+        if teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
+        print("[QuestClient] Teacher detected -> QuestGui hidden", reason)
 end
 
 local function ensureQuestHiddenForTeacher(): boolean
-if StageRolePolicy.WaitForRoleReplication(LP, 12) then
-if StageRolePolicy.IsTeacher(LP) then
-hideQuestForTeacher("(initial)")
-return true
-end
-end
+        local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+        if observeBroadcast then
+                teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
+                        if isTeacher then
+                                hideQuestForTeacher("(TeacherRoleUpdated)")
+                        end
+                end, 15)
+        end
 
-teacherDisconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
-if isTeacher then
-hideQuestForTeacher(reason)
-end
-end, { timeoutSec = 15 })
+        if StageRolePolicy.WaitForRoleReplication(LP, 12) then
+                if StageRolePolicy.IsTeacher(LP) then
+                        hideQuestForTeacher("(initial)")
+                        return true
+                end
+        end
 
-return false
+        teacherDisconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
+                if isTeacher then
+                        hideQuestForTeacher(reason)
+                end
+        end, { timeoutSec = 15 })
+
+        return false
 end
 
 if ensureQuestHiddenForTeacher() then

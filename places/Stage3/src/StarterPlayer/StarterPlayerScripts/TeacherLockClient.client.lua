@@ -16,24 +16,33 @@ local RE_Lock = Remotes:WaitForChild("Teacher_ClientLock")
 local currentIsTeacher = false
 
 if StageRolePolicy.WaitForRoleReplication(lp, 12) then
-currentIsTeacher = StageRolePolicy.IsTeacher(lp)
+        currentIsTeacher = StageRolePolicy.IsTeacher(lp)
 end
 
 StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
-currentIsTeacher = isTeacher
+        currentIsTeacher = isTeacher
 end, { timeoutSec = 15 })
 
-RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
--- 선생님은 항상 제외
-if currentIsTeacher then return end
+local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+if observeBroadcast then
+        observeBroadcast(lp, function(_, isTeacher)
+                if typeof(isTeacher) == "boolean" then
+                        currentIsTeacher = isTeacher
+                end
+        end, 15)
+end
 
-	if shouldLock then
-		PlayerLock2.Lock({
-			freezeMovement = true,
-			freezeCamera = false,
-			disableInput = false,
-		})
-	else
-		PlayerLock2.Unlock()
-	end
+RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
+        -- 선생님은 항상 제외
+        if currentIsTeacher then return end
+
+        if shouldLock then
+                PlayerLock2.Lock({
+                        freezeMovement = true,
+                        freezeCamera = false,
+                        disableInput = false,
+                })
+        else
+                PlayerLock2.Unlock()
+        end
 end)
