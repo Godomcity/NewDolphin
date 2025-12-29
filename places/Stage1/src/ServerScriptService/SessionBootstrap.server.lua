@@ -7,15 +7,18 @@
 -- + 디버그용으로 JobId / TeleportData 로그
 
 local Players             = game:GetService("Players")
+local ReplicatedStorage   = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local RunService          = game:GetService("RunService")
 
 local SessionResume = require(ServerScriptService:WaitForChild("Modules"):WaitForChild("SessionResume"))
+local Net = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net"))
 
 local playerPassThrough = require(ServerScriptService:WaitForChild("Modules"):WaitForChild("PlayerPassThrough"))
 playerPassThrough.Enable()
 
 local STAGE_NUMBER = 1
+local RE_TeacherRoleUpdated = Net.ensureRE("TeacherRoleUpdated")
 
 ----------------------------------------------------------------
 -- TeleportData Extractors
@@ -163,28 +166,34 @@ Players.PlayerAdded:Connect(function(plr: Player)
 		end
 	end
 
-	-- 2) userRole / isTeacher / roomCode 복원
-	do
-		local roleAttr = plr:GetAttribute("userRole")
-		if typeof(roleAttr) ~= "string" or roleAttr == "" then
-			local role = extractUserRole(td)
-			if role and role ~= "" then
-				plr:SetAttribute("userRole", role)
-				plr:SetAttribute("isTeacher", isTeacherRole(role))
-			end
-		else
-			-- 이미 있으면 boolean만 보정
-			plr:SetAttribute("isTeacher", isTeacherRole(roleAttr))
-		end
+        -- 2) userRole / isTeacher / roomCode 복원
+        do
+                local roleAttr = plr:GetAttribute("userRole")
+                if typeof(roleAttr) ~= "string" or roleAttr == "" then
+                        local role = extractUserRole(td)
+                        if role and role ~= "" then
+                                plr:SetAttribute("userRole", role)
+                                plr:SetAttribute("isTeacher", isTeacherRole(role))
+                        end
+                else
+                        -- 이미 있으면 boolean만 보정
+                        plr:SetAttribute("isTeacher", isTeacherRole(roleAttr))
+                end
 
-		local roomAttr = plr:GetAttribute("roomCode")
-		if typeof(roomAttr) ~= "string" or roomAttr == "" then
-			local rc = extractRoomCode(td)
-			if rc and rc ~= "" then
-				plr:SetAttribute("roomCode", rc)
-			end
-		end
-	end
+                local roomAttr = plr:GetAttribute("roomCode")
+                if typeof(roomAttr) ~= "string" or roomAttr == "" then
+                        local rc = extractRoomCode(td)
+                        if rc and rc ~= "" then
+                                plr:SetAttribute("roomCode", rc)
+                        end
+                end
+
+                local teacherFlag = plr:GetAttribute("isTeacher")
+                local roleValue = plr:GetAttribute("userRole")
+                if RE_TeacherRoleUpdated then
+                        RE_TeacherRoleUpdated:FireAllClients(plr.UserId, roleValue, teacherFlag)
+                end
+        end
 
 	local finalSid = plr:GetAttribute("sessionId")
 	print(("[Stage1 SessionBootstrap] %s sessionId=%s userRole=%s isTeacher=%s roomCode=%s"):format(
@@ -198,13 +207,13 @@ Players.PlayerAdded:Connect(function(plr: Player)
 	-- 디버그 로그
 	debugPrintJoinData(plr, joinData)
 
-	-- 3) Stage1 재접속용 Resume 저장
-if typeof(finalSid) == "string" and finalSid ~= "" then
-print(("[Stage1 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
-plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
-))
-SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId, plr:GetAttribute("userRole"))
-end
+        -- 3) Stage1 재접속용 Resume 저장
+        if typeof(finalSid) == "string" and finalSid ~= "" then
+                print(("[Stage1 SessionBootstrap] Save Resume: userId=%d sid=%s stage=%d placeId=%d"):format(
+                        plr.UserId, finalSid, STAGE_NUMBER, game.PlaceId
+                ))
+                SessionResume.Save(plr, finalSid, STAGE_NUMBER, game.PlaceId, plr:GetAttribute("userRole"))
+        end
 end)
 
 print("[Stage1 SessionBootstrap] READY (sessionId + userRole/isTeacher/roomCode + SessionResume + debug)")
