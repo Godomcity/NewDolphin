@@ -28,7 +28,7 @@ local function requestAsync(method: string, url: string, bodyTable: any?)
 		["Accept"] = "application/json",
 		["Content-Type"] = "application/json",
 		["X-CLIENT-ID"] = ROBLOX_CLIENT_ID,
-		["Authorization"] = "Bearer " .. ACCESS_TOKEN,
+		["accessToken"] = "Bearer " .. ACCESS_TOKEN,
 	}
 
 	local payload: any = {
