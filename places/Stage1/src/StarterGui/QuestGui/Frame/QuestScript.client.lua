@@ -8,8 +8,21 @@ local TweenService = game:GetService("TweenService")
 
 local LP = Players.LocalPlayer
 
--- ✅ 선생님(교사) UserId
-local TEACHER_USERID = 2783482612
+local Roles = require(RS:WaitForChild("Modules"):WaitForChild("Roles"))
+
+local function isTeacher(): boolean
+        local role = LP:GetAttribute("userRole")
+        if Roles.isTeacherRole(role) then
+                return true
+        end
+
+        local isTeacherAttr = LP:GetAttribute("isTeacher")
+        if typeof(isTeacherAttr) == "boolean" then
+                return isTeacherAttr
+        end
+
+        return false
+end
 
 -- ===== UI 찾기 =====
 local root       = script.Parent :: Frame
@@ -22,19 +35,19 @@ questLabel.RichText = true
 
 -- ✅ 선생님은 QuestGui 안 보이게(아예 로직 실행 X)
 do
-	if LP.UserId == TEACHER_USERID then
-		-- Quest 프레임 숨김
-		questRoot.Visible = false
+        if isTeacher() then
+                -- Quest 프레임 숨김
+                questRoot.Visible = false
 
-		-- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
-		local gui = root:FindFirstAncestorOfClass("ScreenGui")
-		if gui then
-			gui.Enabled = false
-		end
+                -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
+                local gui = root:FindFirstAncestorOfClass("ScreenGui")
+                if gui then
+                        gui.Enabled = false
+                end
 
-		print("[QuestClient] Teacher detected -> QuestGui hidden")
-		return
-	end
+                print("[QuestClient] Teacher detected -> QuestGui hidden")
+                return
+        end
 end
 
 -- ===== 퀘스트 텍스트 정의 =====
