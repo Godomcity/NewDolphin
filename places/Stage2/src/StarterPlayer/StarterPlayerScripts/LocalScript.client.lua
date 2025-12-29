@@ -3,11 +3,12 @@
 -- F6 키로 "사다리 컷씬" 테스트
 -- Workspace.CutSceneCamPos -> CutSceneCamEndPos 로 스무스하게 이동 + 사다리 드롭
 
-local Players      = game:GetService("Players")
-local RS           = game:GetService("ReplicatedStorage")
-local CAS          = game:GetService("ContextActionService")
-local Workspace    = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
+local Players          = game:GetService("Players")
+local RS               = game:GetService("ReplicatedStorage")
+local ReplicatedFirst  = game:GetService("ReplicatedFirst")
+local CAS              = game:GetService("ContextActionService")
+local Workspace        = game:GetService("Workspace")
+local TweenService     = game:GetService("TweenService")
 
 local LP     = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
@@ -15,8 +16,7 @@ local camera = Workspace.CurrentCamera
 local Modules         = RS:WaitForChild("Modules")
 local LadderCinematic = require(Modules:WaitForChild("LadderCinematic"))
 
--- 🔹 사다리 템플릿 / 위치 (Stage2에서 쓰던 값 재사용)
-local LADDER_TEMPLATE = RS:WaitForChild("Stage2Ladder")  -- 템플릿 이름 맞춰줘
+local LADDER_TEMPLATE = ReplicatedFirst:WaitForChild("Stage2Ladder")  -- 템플릿 이름 맞춰줘
 local LADDER_POS      = Vector3.new(-59.745, 29.593, 125.927)
 
 -- 🔹 예전용 카메라 포인트( CutSceneCamPos 없을 때만 사용되는 폴백 )
