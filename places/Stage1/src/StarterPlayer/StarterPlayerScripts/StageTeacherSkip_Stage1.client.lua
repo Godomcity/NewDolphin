@@ -13,6 +13,7 @@ wait(5)
 
 local Players            = game:GetService("Players")
 local RS                 = game:GetService("ReplicatedStorage")
+local ReplicatedFirst    = game:GetService("ReplicatedFirst")
 local Workspace          = game:GetService("Workspace")
 local CollectionService  = game:GetService("CollectionService")
 
@@ -64,10 +65,10 @@ local PortalMover =
 -- 포탈 템플릿 (DialogueUI/PortalSpawnCutscene 에서 쓰던 "Potal" 기준)
 local PortalTemplate: Model? = nil
 do
-	local t = RS:FindFirstChild("Potal")
-	if t and t:IsA("Model") then
-		PortalTemplate = t
-	end
+        local t = ReplicatedFirst:FindFirstChild("Potal") or RS:FindFirstChild("Potal")
+        if t and t:IsA("Model") then
+                PortalTemplate = t
+        end
 end
 
 local QuestGuideBus: BindableEvent? do

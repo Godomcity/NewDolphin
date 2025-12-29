@@ -2,9 +2,9 @@
 --!strict
 -- 인터랙션 지점의 상위 부모(ancestor)를 찾아 태그별로 액션 실행.
 -- 기본 액션: Disappear(사라짐), DoorOpen(문 열기), PortalNeonOn(포탈 네온)
--- 신규 액션: Box / seaShell → ReplicatedStorage의 동일 이름 템플릿으로 "완전 교체"
+-- 신규 액션: Box / seaShell → ReplicatedFirst의 동일 이름 템플릿으로 "완전 교체"
 
-local RS = game:GetService("ReplicatedStorage")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local CollectionService = game:GetService("CollectionService")
 local TweenService = game:GetService("TweenService")
 
@@ -198,10 +198,10 @@ end
 
 -- ===================== 신규 액션 (완전 교체) =====================
 
--- Box / seaShell : ReplicatedStorage의 동일 이름 템플릿으로 "완전 교체"
-local function actionReplaceWithRS(root: Instance, ctx)
-	-- 교체 대상은 가능하면 모델 루트
-	local rootModel: Model? = nil
+-- Box / seaShell : ReplicatedFirst의 동일 이름 템플릿으로 "완전 교체"
+local function actionReplaceWithReplicatedFirst(root: Instance, ctx)
+        -- 교체 대상은 가능하면 모델 루트
+        local rootModel: Model? = nil
 	if root:IsA("Model") then
 		rootModel = root
 	else
@@ -213,11 +213,11 @@ local function actionReplaceWithRS(root: Instance, ctx)
 	local parent = target.Parent
 	if not parent then return end
 
-	local template = RS:FindFirstChild(targetName)
-	if not template then
-		warn(("[ActionRouter] RS에 '%s' 템플릿이 없습니다."):format(targetName))
-		return
-	end
+        local template = ReplicatedFirst:FindFirstChild(targetName)
+        if not template then
+                warn(("[ActionRouter] ReplicatedFirst에 '%s' 템플릿이 없습니다."):format(targetName))
+                return
+        end
 
 	-- 현재 위치(피벗) 확보
 	local pivotCF: CFrame
@@ -275,8 +275,8 @@ M.registerMany({
 })
 
 -- 신규 태그 등록(완전 교체)
-M.register("Box", actionReplaceWithRS)
-M.register("seaShell", actionReplaceWithRS)
+M.register("Box", actionReplaceWithReplicatedFirst)
+M.register("seaShell", actionReplaceWithReplicatedFirst)
 
 -- 디버그: 상위 부모/태그 문자열
 function M.debugDescribeAncestor(inst: Instance): string
