@@ -93,13 +93,10 @@ local function waitForTeacherBroadcast(plr: Player, timeout: number): boolean
                 return false
         end
 
-<<<<<<< HEAD
         if timeout <= 0 then
                 return false
         end
 
-=======
->>>>>>> main
         local event = resolveTeacherRoleEvent(timeout)
         if not event then
                 return false
@@ -167,14 +164,10 @@ function M.WaitForRoleReplication(plr: Player, timeoutSec: number?): boolean
                 return true
         end
 
-<<<<<<< HEAD
         local remaining = deadline - os.clock()
         if remaining > 0 then
                 waitForTeacherBroadcast(plr, remaining)
         end
-=======
-        waitForTeacherBroadcast(plr, timeout)
->>>>>>> main
 
         while os.clock() < deadline do
                 if hasRoleAttributes(plr) then
@@ -213,11 +206,13 @@ function M.ObserveTeacher(plr: Player, callback: (boolean, string?) -> (), opts:
                 local event = resolveTeacherRoleEvent(timeout)
                 if event then
                         table.insert(connections, event.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
-                        if not plr or plr.UserId ~= userId then
-                                return
-                        end
+                                if not plr or plr.UserId ~= userId then
+                                        return
+                                end
 
-                        fire("(server role broadcast)")
+                                applyTeacherPayload(plr, role, isTeacher)
+
+                                fire("(server role broadcast)")
                         end))
                 end
         end

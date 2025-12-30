@@ -54,7 +54,6 @@ teacherDisconnect = StageRolePolicy.ObserveTeacher(player, function(isTeacher: b
         updateTeacher(isTeacher, reason)
 end, { timeoutSec = 15 })
 
-<<<<<<< HEAD
 local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
 if observeBroadcast then
         teacherBroadcastDisconnect = observeBroadcast(player, function(_, isTeacher)
@@ -63,13 +62,6 @@ if observeBroadcast then
                 end
         end, 15)
 end
-=======
-teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(player, function(_, isTeacher)
-        if typeof(isTeacher) == "boolean" then
-                updateTeacher(isTeacher, "(TeacherRoleUpdated)")
-        end
-end, 15)
->>>>>>> main
 
 local isClicked = false
 

@@ -350,7 +350,6 @@ StageRolePolicy.WaitForRoleReplication(LP, 12)
 
                         local disconnect: (() -> ())? = nil
 
-<<<<<<< HEAD
                         local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
                         if observeBroadcast then
                                 teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
@@ -359,13 +358,6 @@ StageRolePolicy.WaitForRoleReplication(LP, 12)
                                         end
                                 end, 12)
                         end
-=======
-                        teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(LP, function(_, isTeacher)
-                                if isTeacher then
-                                        startTeacherFlow("(TeacherRoleUpdated)")
-                                end
-                        end, 12)
->>>>>>> main
 
                         local function onTeacherChanged(isTeacher: boolean, reason: string?)
                                 if not isTeacher or teacherFlowStarted then
