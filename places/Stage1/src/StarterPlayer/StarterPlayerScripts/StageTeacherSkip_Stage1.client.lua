@@ -67,7 +67,7 @@ local PortalMover =
 -- 포탈 템플릿 (DialogueUI/PortalSpawnCutscene 에서 쓰던 "Potal" 기준)
 local PortalTemplate: Model? = nil
 do
-        local t = ReplicatedFirst:FindFirstChild("Potal") or RS:FindFirstChild("Potal")
+        local t = ReplicatedFirst:FindFirstChild("Potal")
         if t and t:IsA("Model") then
                 PortalTemplate = t
         end
@@ -250,7 +250,7 @@ end
 ----------------------------------------------------------------
 local function spawnPortalForTeacher(): Instance?
 	if not PortalTemplate then
-		warn("[StageTeacherSkip_Stage1] PortalTemplate 'Potal' not found in ReplicatedStorage")
+		warn("[StageTeacherSkip_Stage1] PortalTemplate 'Potal' not found in ReplicatedFirst")
 		return nil
 	end
 
