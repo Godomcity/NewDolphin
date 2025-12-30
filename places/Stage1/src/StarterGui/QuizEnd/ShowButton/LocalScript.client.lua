@@ -75,16 +75,16 @@ if StageRolePolicy.WaitForRoleReplication(lp, 12) then
 end
 
 teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(flag: boolean, reason: string?)
-applyTeacherFlag(flag, reason)
+        applyTeacherFlag(flag, reason)
 end, { timeoutSec = 15 })
 
 local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
 if observeBroadcast then
-teacherBroadcastDisconnect = observeBroadcast(lp, function(_, flag)
-if typeof(flag) == "boolean" then
-applyTeacherFlag(flag, "(TeacherRoleUpdated)")
-end
-end, 15)
+        teacherBroadcastDisconnect = observeBroadcast(lp, function(_, flag)
+                if typeof(flag) == "boolean" then
+                        applyTeacherFlag(flag, "(TeacherRoleUpdated)")
+                end
+        end, 15)
 end
 
 -- 패널 트윈

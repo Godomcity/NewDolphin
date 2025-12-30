@@ -332,6 +332,11 @@ local function startTeacherFlow(reason: string?)
         if teacherFlowStarted then return end
         teacherFlowStarted = true
 
+        if teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
         print("[StageTeacherSkip_Stage2] Teacher detected → show cleared state, skip Stage flows", reason)
 
         task.defer(function()
