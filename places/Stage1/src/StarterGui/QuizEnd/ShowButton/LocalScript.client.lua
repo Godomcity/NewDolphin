@@ -49,6 +49,7 @@ end
 bg.Visible = false
 bg.Position = POS_HIDE
 
+<<<<<<< HEAD
 StageRolePolicy.ObserveTeacher(lp, function(isTeacherNow: boolean, reason: string?)
 	isTeacher = isTeacherNow
 	showBtn.Visible = isTeacherNow
@@ -58,6 +59,25 @@ StageRolePolicy.ObserveTeacher(lp, function(isTeacherNow: boolean, reason: strin
 	print(("[QuizEnd] Teacher panel status: %s, reason: %s"):format(tostring(isTeacherNow), reason or "n/a"))
 end, { timeoutSec = 15 })
 
+=======
+if StageRolePolicy.WaitForRoleReplication(lp, 12) then
+        applyTeacherFlag(StageRolePolicy.IsTeacher(lp), "(initial)")
+end
+
+teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(flag: boolean, reason: string?)
+        applyTeacherFlag(flag, reason)
+end, { timeoutSec = 15 })
+
+local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+if observeBroadcast then
+        teacherBroadcastDisconnect = observeBroadcast(lp, function(_, flag)
+                if typeof(flag) == "boolean" then
+                        applyTeacherFlag(flag, "(TeacherRoleUpdated)")
+                end
+        end, 15)
+end
+
+>>>>>>> a022e90620db0dfa7b96c0988191c328f6fa45d2
 -- 패널 트윈
 local panelTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local panelTween: Tween? = nil

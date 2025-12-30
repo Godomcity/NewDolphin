@@ -24,6 +24,7 @@ if endButton:IsA("GuiObject") then
         endButton.Visible = false
 end
 
+<<<<<<< HEAD
 StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: string?)
 	currentIsTeacher = isTeacher
 	if endButton:IsA("GuiObject") then
@@ -32,6 +33,47 @@ StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: stri
 	print(("[QuizEnd] Teacher status: %s, reason: %s"):format(tostring(isTeacher), reason or "n/a"))
 end, { timeoutSec = 15 })
 
+=======
+local function updateTeacher(isTeacher: boolean, reason: string?)
+        currentIsTeacher = isTeacher
+
+        if endButton:IsA("GuiObject") then
+                endButton.Visible = isTeacher
+        end
+
+        if isTeacher and teacherDisconnect then
+                teacherDisconnect()
+                teacherDisconnect = nil
+        end
+
+        if isTeacher and teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+
+        if isTeacher then
+                print("[QuizEnd] Teacher detected -> EndButton visible", reason)
+        end
+end
+
+if StageRolePolicy.WaitForRoleReplication(player, 12) then
+        updateTeacher(StageRolePolicy.IsTeacher(player), "(initial)")
+end
+
+teacherDisconnect = StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: string?)
+        updateTeacher(isTeacher, reason)
+end, { timeoutSec = 15 })
+
+local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+if observeBroadcast then
+        teacherBroadcastDisconnect = observeBroadcast(player, function(_, isTeacher)
+                if typeof(isTeacher) == "boolean" then
+                        updateTeacher(isTeacher, "(TeacherRoleUpdated)")
+                end
+        end, 15)
+end
+
+>>>>>>> a022e90620db0dfa7b96c0988191c328f6fa45d2
 local isClicked = false
 
 local function onEndClicked()

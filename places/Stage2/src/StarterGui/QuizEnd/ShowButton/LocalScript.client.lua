@@ -27,6 +27,18 @@ local isTeacher = false
 local teacherDisconnect: (() -> ())? = nil
 local teacherBroadcastDisconnect: (() -> ())? = nil
 
+local function cleanupTeacherListeners()
+        if teacherDisconnect then
+                teacherDisconnect()
+                teacherDisconnect = nil
+        end
+
+        if teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+end
+
 -- ✅ 패널 Position: 열기 X=2.987, 닫기 X=0 (Y=2.343 고정)
 local Y_SCALE = 2.3
 local POS_SHOW = UDim2.new(2.987, 0, Y_SCALE, 0)
@@ -52,14 +64,8 @@ local function applyTeacherFlag(flag: boolean, reason: string?)
 
         if not flag then
                 closePanel()
-        elseif flag and teacherDisconnect then
-                teacherDisconnect()
-                teacherDisconnect = nil
-        end
-
-        if flag and teacherBroadcastDisconnect then
-                teacherBroadcastDisconnect()
-                teacherBroadcastDisconnect = nil
+        elseif flag then
+                cleanupTeacherListeners()
         end
 
         if flag then
@@ -86,6 +92,8 @@ if observeBroadcast then
                 end
         end, 15)
 end
+
+script.Destroying:Connect(cleanupTeacherListeners)
 
 -- 패널 트윈
 local panelTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)

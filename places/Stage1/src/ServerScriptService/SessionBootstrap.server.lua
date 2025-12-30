@@ -185,8 +185,8 @@ Players.PlayerAdded:Connect(function(plr: Player)
 		-- 클라이언트에 역할 정보 브로드캐스트
                 local teacherFlag = plr:GetAttribute("isTeacher")
                 local roleValue = plr:GetAttribute("userRole")
-                if RE_TeacherRoleUpdated then
-                        RE_TeacherRoleUpdated:FireAllClients(plr.UserId, roleValue, teacherFlag)
+                if RE_TeacherRoleUpdated and teacherFlag then
+                        RE_TeacherRoleUpdated:FireClient(plr, plr.UserId, roleValue, teacherFlag)
                 end
         end
 

@@ -14,7 +14,10 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local RE_Lock = Remotes:WaitForChild("Teacher_ClientLock")
 
 local currentIsTeacher = false
+local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
+<<<<<<< HEAD
 -- StageRolePolicy.ObserveTeacher는 역할 복제 대기, 속성 변경, 서버 브로드캐스트를 모두 포함하므로
 -- 이 함수 하나로 교사 상태를 안정적으로 관찰할 수 있습니다.
 StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean, reason: string?)
@@ -22,6 +25,41 @@ StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean, reason: string?)
 	print(("[TeacherLockClient] Teacher status updated: %s (reason: %s)"):format(tostring(isTeacher), reason or "n/a"))
 end, { timeoutSec = 15 })
 
+=======
+if StageRolePolicy.WaitForRoleReplication(lp, 12) then
+        currentIsTeacher = StageRolePolicy.IsTeacher(lp)
+end
+
+teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
+        currentIsTeacher = isTeacher
+
+        if isTeacher then
+                if teacherDisconnect then
+                        teacherDisconnect()
+                        teacherDisconnect = nil
+                end
+                if teacherBroadcastDisconnect then
+                        teacherBroadcastDisconnect()
+                        teacherBroadcastDisconnect = nil
+                end
+        end
+end, { timeoutSec = 15 })
+
+local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+if observeBroadcast then
+        teacherBroadcastDisconnect = observeBroadcast(lp, function(_, isTeacher)
+                if typeof(isTeacher) == "boolean" then
+                        currentIsTeacher = isTeacher
+
+                        if isTeacher and teacherBroadcastDisconnect then
+                                teacherBroadcastDisconnect()
+                                teacherBroadcastDisconnect = nil
+                        end
+                end
+        end, 15)
+end
+
+>>>>>>> a022e90620db0dfa7b96c0988191c328f6fa45d2
 RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
         -- 선생님은 항상 제외
 	if currentIsTeacher then

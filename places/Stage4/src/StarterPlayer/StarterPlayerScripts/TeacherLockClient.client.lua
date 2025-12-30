@@ -14,20 +14,38 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local RE_Lock = Remotes:WaitForChild("Teacher_ClientLock")
 
 local currentIsTeacher = false
+local teacherDisconnect: (() -> ())? = nil
+local teacherBroadcastDisconnect: (() -> ())? = nil
 
 if StageRolePolicy.WaitForRoleReplication(lp, 12) then
         currentIsTeacher = StageRolePolicy.IsTeacher(lp)
 end
 
-StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
+teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
         currentIsTeacher = isTeacher
+
+        if isTeacher then
+                if teacherDisconnect then
+                        teacherDisconnect()
+                        teacherDisconnect = nil
+                end
+                if teacherBroadcastDisconnect then
+                        teacherBroadcastDisconnect()
+                        teacherBroadcastDisconnect = nil
+                end
+        end
 end, { timeoutSec = 15 })
 
 local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
 if observeBroadcast then
-        observeBroadcast(lp, function(_, isTeacher)
+        teacherBroadcastDisconnect = observeBroadcast(lp, function(_, isTeacher)
                 if typeof(isTeacher) == "boolean" then
                         currentIsTeacher = isTeacher
+
+                        if isTeacher and teacherBroadcastDisconnect then
+                                teacherBroadcastDisconnect()
+                                teacherBroadcastDisconnect = nil
+                        end
                 end
         end, 15)
 end

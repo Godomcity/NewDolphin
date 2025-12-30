@@ -75,15 +75,7 @@ local SLIDE_OFFSET = -1.0        -- 왼쪽 화면 밖에서 시작(-1.0 만큼 �
 local teacherDisconnect: (() -> ())? = nil
 local teacherBroadcastDisconnect: (() -> ())? = nil
 
-local function hideQuestForTeacher(reason: string?)
-        questRoot.Visible = false
-
-        -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
-        local gui = root:FindFirstAncestorOfClass("ScreenGui")
-        if gui then
-                gui.Enabled = false
-        end
-
+local function cleanupTeacherConnections()
         if teacherDisconnect then
                 teacherDisconnect()
                 teacherDisconnect = nil
@@ -93,6 +85,18 @@ local function hideQuestForTeacher(reason: string?)
                 teacherBroadcastDisconnect()
                 teacherBroadcastDisconnect = nil
         end
+end
+
+local function hideQuestForTeacher(reason: string?)
+        questRoot.Visible = false
+
+        -- 상위 ScreenGui까지 있으면 통째로 끔(더 확실)
+        local gui = root:FindFirstAncestorOfClass("ScreenGui")
+        if gui then
+                gui.Enabled = false
+        end
+
+        cleanupTeacherConnections()
 
         print("[QuestClient] Teacher detected -> QuestGui hidden", reason)
 end
@@ -122,6 +126,8 @@ local function ensureQuestHiddenForTeacher(): boolean
 
         return false
 end
+
+script.Destroying:Connect(cleanupTeacherConnections)
 
 if ensureQuestHiddenForTeacher() then
         return

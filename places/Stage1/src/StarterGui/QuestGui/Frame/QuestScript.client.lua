@@ -40,10 +40,22 @@ local function hideQuestForTeacher(reason: string?)
 	print(("[QuestClient] Teacher detected -> QuestGui hidden (%s)"):format(reason or "n/a"))
 end
 
+<<<<<<< HEAD
 if StageRolePolicy.WaitForRoleReplication(LP, 12) and StageRolePolicy.IsTeacher(LP) then
 	hideQuestForTeacher("(initial)")
 	return
 end
+=======
+local function ensureQuestHiddenForTeacher(): boolean
+        local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+        if observeBroadcast then
+                teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
+                        if isTeacher then
+                                hideQuestForTeacher("(TeacherRoleUpdated)")
+                        end
+                end, 15)
+        end
+>>>>>>> a022e90620db0dfa7b96c0988191c328f6fa45d2
 
 disconnectObserver = StageRolePolicy.ObserveTeacher(LP, function(isTeacher, reason)
 	if isTeacher then

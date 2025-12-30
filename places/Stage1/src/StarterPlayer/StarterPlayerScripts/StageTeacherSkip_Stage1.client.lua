@@ -368,7 +368,50 @@ local function monitorTeacherFlag()
 		startTeacherFlow(reason)
 	end
 
+<<<<<<< HEAD
 	disconnect = StageRolePolicy.ObserveTeacher(LP, onTeacherChanged, { timeoutSec = 15 })
+=======
+local disconnect: (() -> ())? = nil
+
+local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
+if observeBroadcast then
+                        teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
+                                if isTeacher then
+                                        startTeacherFlow("(TeacherRoleUpdated)")
+                                end
+                        end, 12)
+end
+
+                        local function onTeacherChanged(isTeacher: boolean, reason: string?)
+                                if not isTeacher or teacherFlowStarted then
+                                        return
+                                end
+
+                                if disconnect then
+                                        disconnect()
+                                end
+                                startTeacherFlow(reason)
+                        end
+
+                        disconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
+                                onTeacherChanged(isTeacher, reason)
+                        end, { timeoutSec = 12 })
+
+                        task.delay(15, function()
+                                if teacherFlowStarted then return end
+                                warn("[StageTeacherSkip_Stage1] Teacher flag not detected after delay. Running student flow.")
+                                if disconnect then
+                                        disconnect()
+                                end
+                        end)
+                end)
+
+                return
+        end
+
+        -- StageRolePolicy가 없거나 실패하는 경우에도 최소한 한 번 더 확인한다
+        task.spawn(fallback)
+>>>>>>> a022e90620db0dfa7b96c0988191c328f6fa45d2
 end
 
 monitorTeacherFlag()
