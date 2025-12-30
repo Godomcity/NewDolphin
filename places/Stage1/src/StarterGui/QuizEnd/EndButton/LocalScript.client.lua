@@ -1,5 +1,7 @@
 -- LocalScript @ StarterGui/QuizEnd/EndButton
 --!strict
+
+print("변경")
 -- 선생님만 보임
 -- 클릭하면 서버에 Quiz_EndRequest만 보냄
 -- (정리+엔딩 컷씬+Hub 텔레포트는 서버 오케스트레이터가 처리)
@@ -17,51 +19,18 @@ local Remotes     = RS:WaitForChild("Remotes")
 local RE_QuizEnd  = Remotes:WaitForChild("Quiz_EndRequest") :: RemoteEvent
 
 local currentIsTeacher = false
-local teacherDisconnect: (() -> ())? = nil
-local teacherBroadcastDisconnect: (() -> ())? = nil
 
 if endButton:IsA("GuiObject") then
         endButton.Visible = false
 end
 
-local function updateTeacher(isTeacher: boolean, reason: string?)
-        currentIsTeacher = isTeacher
-
-        if endButton:IsA("GuiObject") then
-                endButton.Visible = isTeacher
-        end
-
-        if isTeacher and teacherDisconnect then
-                teacherDisconnect()
-                teacherDisconnect = nil
-        end
-
-        if isTeacher and teacherBroadcastDisconnect then
-                teacherBroadcastDisconnect()
-                teacherBroadcastDisconnect = nil
-        end
-
-        if isTeacher then
-                print("[QuizEnd] Teacher detected -> EndButton visible", reason)
-        end
-end
-
-if StageRolePolicy.WaitForRoleReplication(player, 12) then
-        updateTeacher(StageRolePolicy.IsTeacher(player), "(initial)")
-end
-
-teacherDisconnect = StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: string?)
-updateTeacher(isTeacher, reason)
+StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: string?)
+	currentIsTeacher = isTeacher
+	if endButton:IsA("GuiObject") then
+		endButton.Visible = isTeacher
+	end
+	print(("[QuizEnd] Teacher status: %s, reason: %s"):format(tostring(isTeacher), reason or "n/a"))
 end, { timeoutSec = 15 })
-
-local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
-if observeBroadcast then
-teacherBroadcastDisconnect = observeBroadcast(player, function(_, isTeacher)
-if typeof(isTeacher) == "boolean" then
-updateTeacher(isTeacher, "(TeacherRoleUpdated)")
-end
-end, 15)
-end
 
 local isClicked = false
 

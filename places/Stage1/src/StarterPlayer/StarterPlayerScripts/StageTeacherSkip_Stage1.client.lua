@@ -1,5 +1,7 @@
 -- StarterPlayerScripts/StageTeacherSkip_Stage1.client.lua
 --!strict
+
+print("변경")
 -- Stage1 전용
 -- 선생님으로 들어오면:
 --  - Stage1 퀴즈/퀘스트 관련 프롬프트 비활성화
@@ -346,68 +348,27 @@ local function startTeacherFlow(reason: string?)
 end
 
 local function monitorTeacherFlag()
-        local function fallback()
-                local deadline = os.clock() + 12
-                while os.clock() < deadline do
-                        if detectTeacher() then
-                                startTeacherFlow("(fallback)")
-                                return
-                        end
-                        task.wait(0.5)
-                end
+	if not (StageRolePolicy and StageRolePolicy.ObserveTeacher) then
+		warn("[StageTeacherSkip_Stage1] StageRolePolicy not available. Teacher skip flow may not run.")
+		return
+	end
 
-                warn("[StageTeacherSkip_Stage1] Teacher flag not detected after delay. Running student flow.")
-        end
+	local disconnect: (() -> ())?
 
-        if StageRolePolicy and StageRolePolicy.ObserveTeacher and StageRolePolicy.WaitForRoleReplication then
-                task.spawn(function()
-                        StageRolePolicy.WaitForRoleReplication(LP, 12)
+	local function onTeacherChanged(isTeacher: boolean, reason: string?)
+		if not isTeacher or teacherFlowStarted then
+			return
+		end
 
-                        if detectTeacher() then
-                                startTeacherFlow("(post-spawn)")
-                                return
-                        end
+		-- 교사로 확인되면 즉시 스킵 로직을 실행하고, 더 이상 관찰할 필요가 없으므로 연결을 해제합니다.
+		if disconnect then
+			disconnect()
+			disconnect = nil
+		end
+		startTeacherFlow(reason)
+	end
 
-local disconnect: (() -> ())? = nil
-
-local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
-if observeBroadcast then
-teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
-if isTeacher then
-startTeacherFlow("(TeacherRoleUpdated)")
-end
-end, 12)
-end
-
-                        local function onTeacherChanged(isTeacher: boolean, reason: string?)
-                                if not isTeacher or teacherFlowStarted then
-                                        return
-                                end
-
-                                if disconnect then
-                                        disconnect()
-                                end
-                                startTeacherFlow(reason)
-                        end
-
-                        disconnect = StageRolePolicy.ObserveTeacher(LP, function(isTeacher: boolean, reason: string?)
-                                onTeacherChanged(isTeacher, reason)
-                        end, { timeoutSec = 12 })
-
-                        task.delay(15, function()
-                                if teacherFlowStarted then return end
-                                warn("[StageTeacherSkip_Stage1] Teacher flag not detected after delay. Running student flow.")
-                                if disconnect then
-                                        disconnect()
-                                end
-                        end)
-                end)
-
-                return
-        end
-
-        -- StageRolePolicy가 없거나 실패하는 경우에도 최소한 한 번 더 확인한다
-        task.spawn(fallback)
+	disconnect = StageRolePolicy.ObserveTeacher(LP, onTeacherChanged, { timeoutSec = 15 })
 end
 
 monitorTeacherFlag()

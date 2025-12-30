@@ -1,5 +1,7 @@
 --!strict
 -- QuizEnd UI (ShowButton 아래 LocalScript)
+
+print("변경")
 -- ShowButton -> BackGround 슬라이드 인 (X=0 -> 2.987)
 -- XButton    -> 슬라이드 아웃 (X=2.987 -> 0)
 -- Spawn/Stop -> 선생님만 서버 Remote 호출
@@ -24,8 +26,6 @@ local spawnBtn = bg:WaitForChild("SpawnButton") :: GuiButton
 local stopBtn = bg:WaitForChild("StopButton") :: GuiButton
 
 local isTeacher = false
-local teacherDisconnect: (() -> ())? = nil
-local teacherBroadcastDisconnect: (() -> ())? = nil
 
 -- ✅ 패널 Position: 열기 X=2.987, 닫기 X=0 (Y=2.343 고정)
 local Y_SCALE = 2.3
@@ -46,46 +46,17 @@ local function closePanel()
         showBtn.Active = true
 end
 
-local function applyTeacherFlag(flag: boolean, reason: string?)
-        isTeacher = flag
-        showBtn.Visible = flag
-
-        if not flag then
-                closePanel()
-        elseif flag and teacherDisconnect then
-                teacherDisconnect()
-                teacherDisconnect = nil
-        end
-
-        if flag and teacherBroadcastDisconnect then
-                teacherBroadcastDisconnect()
-                teacherBroadcastDisconnect = nil
-        end
-
-        if flag then
-                print("[QuizEnd] Teacher detected -> teacher panel enabled", reason)
-        end
-end
-
 bg.Visible = false
 bg.Position = POS_HIDE
 
-if StageRolePolicy.WaitForRoleReplication(lp, 12) then
-        applyTeacherFlag(StageRolePolicy.IsTeacher(lp), "(initial)")
-end
-
-teacherDisconnect = StageRolePolicy.ObserveTeacher(lp, function(flag: boolean, reason: string?)
-applyTeacherFlag(flag, reason)
+StageRolePolicy.ObserveTeacher(lp, function(isTeacherNow: boolean, reason: string?)
+	isTeacher = isTeacherNow
+	showBtn.Visible = isTeacherNow
+	if not isTeacherNow then
+		closePanel()
+	end
+	print(("[QuizEnd] Teacher panel status: %s, reason: %s"):format(tostring(isTeacherNow), reason or "n/a"))
 end, { timeoutSec = 15 })
-
-local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
-if observeBroadcast then
-teacherBroadcastDisconnect = observeBroadcast(lp, function(_, flag)
-if typeof(flag) == "boolean" then
-applyTeacherFlag(flag, "(TeacherRoleUpdated)")
-end
-end, 15)
-end
 
 -- 패널 트윈
 local panelTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)

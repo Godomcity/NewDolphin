@@ -167,27 +167,22 @@ Players.PlayerAdded:Connect(function(plr: Player)
 	end
 
         -- 2) userRole / isTeacher / roomCode 복원
-        do
-                local roleAttr = plr:GetAttribute("userRole")
-                if typeof(roleAttr) ~= "string" or roleAttr == "" then
-                        local role = extractUserRole(td)
-                        if role and role ~= "" then
-                                plr:SetAttribute("userRole", role)
-                                plr:SetAttribute("isTeacher", isTeacherRole(role))
-                        end
-                else
-                        -- 이미 있으면 boolean만 보정
-                        plr:SetAttribute("isTeacher", isTeacherRole(roleAttr))
-                end
+	do
+		local role = plr:GetAttribute("userRole") or extractUserRole(td)
+		if role and role ~= "" then
+			plr:SetAttribute("userRole", role)
+		end
 
-                local roomAttr = plr:GetAttribute("roomCode")
-                if typeof(roomAttr) ~= "string" or roomAttr == "" then
-                        local rc = extractRoomCode(td)
-                        if rc and rc ~= "" then
-                                plr:SetAttribute("roomCode", rc)
-                        end
-                end
+		-- isTeacher 속성은 userRole 값에 따라 항상 새로 계산하여 설정합니다.
+		local finalRole = plr:GetAttribute("userRole")
+		plr:SetAttribute("isTeacher", isTeacherRole(finalRole))
 
+		local rc = plr:GetAttribute("roomCode") or extractRoomCode(td)
+		if rc and rc ~= "" then
+			plr:SetAttribute("roomCode", rc)
+		end
+
+		-- 클라이언트에 역할 정보 브로드캐스트
                 local teacherFlag = plr:GetAttribute("isTeacher")
                 local roleValue = plr:GetAttribute("userRole")
                 if RE_TeacherRoleUpdated then

@@ -1,6 +1,8 @@
 -- ReplicatedStorage/Modules/StageRolePolicy.lua
 --!strict
 
+print("변경")
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -16,25 +18,13 @@ local function resolveTeacherRoleEvent(timeoutSec: number?): RemoteEvent?
         end
 
         local timeout = timeoutSec or 5
-        local deadline = os.clock() + timeout
 
-        local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-        while not remotes and os.clock() < deadline do
-                remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Remotes", true)
-                if not remotes then
-                        task.wait(0.1)
-                end
-        end
-
+        local remotes = ReplicatedStorage:WaitForChild("Remotes", timeout)
         if not remotes then
                 return nil
         end
 
-        local ev = remotes:FindFirstChild("TeacherRoleUpdated")
-        if not ev then
-                ev = remotes:WaitForChild("TeacherRoleUpdated", math.max(0, deadline - os.clock()))
-        end
-
+        local ev = remotes:WaitForChild("TeacherRoleUpdated", timeout)
         if ev and ev:IsA("RemoteEvent") then
                 TeacherRoleEvent = ev
                 return ev
