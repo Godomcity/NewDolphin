@@ -20,6 +20,18 @@ local currentIsTeacher = false
 local teacherDisconnect: (() -> ())? = nil
 local teacherBroadcastDisconnect: (() -> ())? = nil
 
+local function cleanupTeacherListeners()
+        if teacherDisconnect then
+                teacherDisconnect()
+                teacherDisconnect = nil
+        end
+
+        if teacherBroadcastDisconnect then
+                teacherBroadcastDisconnect()
+                teacherBroadcastDisconnect = nil
+        end
+end
+
 if endButton:IsA("GuiObject") then
         endButton.Visible = false
 end
@@ -31,14 +43,8 @@ local function updateTeacher(isTeacher: boolean, reason: string?)
                 endButton.Visible = isTeacher
         end
 
-        if isTeacher and teacherDisconnect then
-                teacherDisconnect()
-                teacherDisconnect = nil
-        end
-
-        if isTeacher and teacherBroadcastDisconnect then
-                teacherBroadcastDisconnect()
-                teacherBroadcastDisconnect = nil
+        if isTeacher then
+                cleanupTeacherListeners()
         end
 
         if isTeacher then
@@ -57,11 +63,13 @@ end, { timeoutSec = 15 })
 local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
 if observeBroadcast then
         teacherBroadcastDisconnect = observeBroadcast(player, function(_, isTeacher)
-                if typeof(isTeacher) == "boolean" then
-                        updateTeacher(isTeacher, "(TeacherRoleUpdated)")
-                end
-        end, 15)
+        if typeof(isTeacher) == "boolean" then
+                updateTeacher(isTeacher, "(TeacherRoleUpdated)")
+        end
+end, 15)
 end
+
+script.Destroying:Connect(cleanupTeacherListeners)
 
 local isClicked = false
 

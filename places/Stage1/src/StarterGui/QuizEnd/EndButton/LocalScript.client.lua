@@ -51,16 +51,16 @@ if StageRolePolicy.WaitForRoleReplication(player, 12) then
 end
 
 teacherDisconnect = StageRolePolicy.ObserveTeacher(player, function(isTeacher: boolean, reason: string?)
-updateTeacher(isTeacher, reason)
+        updateTeacher(isTeacher, reason)
 end, { timeoutSec = 15 })
 
 local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
 if observeBroadcast then
-teacherBroadcastDisconnect = observeBroadcast(player, function(_, isTeacher)
-if typeof(isTeacher) == "boolean" then
-updateTeacher(isTeacher, "(TeacherRoleUpdated)")
-end
-end, 15)
+        teacherBroadcastDisconnect = observeBroadcast(player, function(_, isTeacher)
+                if typeof(isTeacher) == "boolean" then
+                        updateTeacher(isTeacher, "(TeacherRoleUpdated)")
+                end
+        end, 15)
 end
 
 local isClicked = false

@@ -1,6 +1,7 @@
 -- ReplicatedStorage/Modules/StageRolePolicy.lua
 --!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -9,6 +10,7 @@ local M = {}
 local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
 
 local TeacherRoleEvent: RemoteEvent? = nil
+local TeacherRoleConn: RBXScriptConnection? = nil
 
 local function resolveTeacherRoleEvent(timeoutSec: number?): RemoteEvent?
         if TeacherRoleEvent and TeacherRoleEvent.Parent then
@@ -79,19 +81,44 @@ local function hasRoleAttributes(plr: Player): boolean
 end
 
 local function applyTeacherPayload(plr: Player, role: string?, isTeacher: boolean?)
-        if role and plr:GetAttribute("userRole") == nil then
+        if role and plr:GetAttribute("userRole") ~= role then
                 plr:SetAttribute("userRole", role)
         end
 
-        if typeof(isTeacher) == "boolean" and typeof(plr:GetAttribute("isTeacher")) ~= "boolean" then
+        local currentTeacher = plr:GetAttribute("isTeacher")
+        if typeof(isTeacher) == "boolean" and (typeof(currentTeacher) ~= "boolean" or currentTeacher ~= isTeacher) then
                 plr:SetAttribute("isTeacher", isTeacher)
         end
 end
+
+local function ensureTeacherBroadcastListener()
+        if TeacherRoleConn or not RunService:IsClient() then
+                return
+        end
+
+        local event = resolveTeacherRoleEvent()
+        if not event then
+                return
+        end
+
+        local lp = Players.LocalPlayer
+        TeacherRoleConn = event.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
+                if not lp or lp.UserId ~= userId then
+                        return
+                end
+
+                applyTeacherPayload(lp, role, isTeacher)
+        end)
+end
+
+ensureTeacherBroadcastListener()
 
 local function waitForTeacherBroadcast(plr: Player, timeout: number): boolean
         if not RunService:IsClient() then
                 return false
         end
+
+        ensureTeacherBroadcastListener()
 
         if timeout <= 0 then
                 return false
