@@ -94,7 +94,6 @@ local function hideQuestForTeacher(reason: string?)
 end
 
 local function ensureQuestHiddenForTeacher(): boolean
-<<<<<<< HEAD
         local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
         if observeBroadcast then
                 teacherBroadcastDisconnect = observeBroadcast(LP, function(_, isTeacher)
@@ -103,13 +102,6 @@ local function ensureQuestHiddenForTeacher(): boolean
                         end
                 end, 15)
         end
-=======
-        teacherBroadcastDisconnect = StageRolePolicy.ObserveTeacherBroadcast(LP, function(_, isTeacher)
-                if isTeacher then
-                        hideQuestForTeacher("(TeacherRoleUpdated)")
-                end
-        end, 15)
->>>>>>> main
 
         if StageRolePolicy.WaitForRoleReplication(LP, 12) then
                 if StageRolePolicy.IsTeacher(LP) then
@@ -128,7 +120,7 @@ local function ensureQuestHiddenForTeacher(): boolean
 end
 
 if ensureQuestHiddenForTeacher() then
-return
+        return
 end
 
 -- ===== 상태 저장 =====

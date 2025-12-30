@@ -8,7 +8,6 @@ local M = {}
 
 local Roles = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Roles"))
 
-<<<<<<< HEAD
 local TeacherRoleEvent: RemoteEvent? = nil
 
 local function resolveTeacherRoleEvent(timeoutSec: number?): RemoteEvent?
@@ -27,36 +26,24 @@ local function resolveTeacherRoleEvent(timeoutSec: number?): RemoteEvent?
                 end
         end
 
-=======
-local function getTeacherRoleEvent(): RemoteEvent?
-        local remotes = ReplicatedStorage:FindFirstChild("Remotes")
->>>>>>> main
         if not remotes then
                 return nil
         end
 
         local ev = remotes:FindFirstChild("TeacherRoleUpdated")
-<<<<<<< HEAD
         if not ev then
                 ev = remotes:WaitForChild("TeacherRoleUpdated", math.max(0, deadline - os.clock()))
         end
 
         if ev and ev:IsA("RemoteEvent") then
                 TeacherRoleEvent = ev
-=======
-        if ev and ev:IsA("RemoteEvent") then
->>>>>>> main
                 return ev
         end
 
         return nil
 end
 
-<<<<<<< HEAD
 TeacherRoleEvent = resolveTeacherRoleEvent()
-=======
-local TeacherRoleEvent: RemoteEvent? = getTeacherRoleEvent()
->>>>>>> main
 
 local function isTeacherByRole(plr: Player): boolean
         local role = plr:GetAttribute("userRole")
@@ -215,26 +202,19 @@ function M.ObserveTeacher(plr: Player, callback: (boolean, string?) -> (), opts:
                 fire("(initial)")
         end)
 
-<<<<<<< HEAD
         if RunService:IsClient() then
                 local event = resolveTeacherRoleEvent(timeout)
                 if event then
                         table.insert(connections, event.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
-=======
-        if RunService:IsClient() and TeacherRoleEvent then
-                table.insert(connections, TeacherRoleEvent.OnClientEvent:Connect(function(userId: number, role: string?, isTeacher: boolean?)
->>>>>>> main
-                        if not plr or plr.UserId ~= userId then
-                                return
-                        end
+                                if not plr or plr.UserId ~= userId then
+                                        return
+                                end
 
-                        fire("(server role broadcast)")
-<<<<<<< HEAD
+                                applyTeacherPayload(plr, role, isTeacher)
+
+                                fire("(server role broadcast)")
                         end))
                 end
-=======
-                end))
->>>>>>> main
         end
 
         table.insert(connections, plr:GetAttributeChangedSignal("userRole"):Connect(function()

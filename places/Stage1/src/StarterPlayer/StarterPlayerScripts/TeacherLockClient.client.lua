@@ -20,25 +20,17 @@ if StageRolePolicy.WaitForRoleReplication(lp, 12) then
 end
 
 StageRolePolicy.ObserveTeacher(lp, function(isTeacher: boolean)
-        currentIsTeacher = isTeacher
+currentIsTeacher = isTeacher
 end, { timeoutSec = 15 })
 
-<<<<<<< HEAD
 local observeBroadcast = StageRolePolicy and StageRolePolicy.ObserveTeacherBroadcast
 if observeBroadcast then
-        observeBroadcast(lp, function(_, isTeacher)
-                if typeof(isTeacher) == "boolean" then
-                        currentIsTeacher = isTeacher
-                end
-        end, 15)
+observeBroadcast(lp, function(_, isTeacher)
+if typeof(isTeacher) == "boolean" then
+currentIsTeacher = isTeacher
 end
-=======
-StageRolePolicy.ObserveTeacherBroadcast(lp, function(_, isTeacher)
-        if typeof(isTeacher) == "boolean" then
-                currentIsTeacher = isTeacher
-        end
 end, 15)
->>>>>>> main
+end
 
 RE_Lock.OnClientEvent:Connect(function(shouldLock: boolean)
         -- 선생님은 항상 제외
